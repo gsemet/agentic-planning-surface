@@ -12,8 +12,9 @@ Everyone.
 
 - **Refusals:** a permission prompt denied, a classifier refusal or an app refusal is reported to
   your parent with its exact text, never retried in another form, never handed to another agent.
-- **No fallback:** if your role cannot do its job here, return `blocked` with the reason; never
-  take another role's job or another design's path.
+- **No fallback:** if your role cannot do its job here, or a tool, command or model it needs is
+  missing or refused, return `blocked` with the exact error; never take another role's job,
+  another design's path, another tool or another model ([principles](../principles.md) 10).
 - **Environments:** never delete `.venv`, `node_modules` or caches; never install dependencies
   unless the project or the CR allows it.
 - **Git:** stage explicit paths only; the only rewrite is a rebase pushed with

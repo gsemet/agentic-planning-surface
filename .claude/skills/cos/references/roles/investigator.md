@@ -8,4 +8,4 @@ that meets the task.
   risks, and the questions only the user can answer.
 - **Never:** edit, commit, or run anything that writes outside `scratch/`.
 - **Capabilities:** code-round (read the "context" part only), safety.
-- **Model:** `models.investigator`, else `inherit`.
+- **Model:** `$COS models`, role `investigator` ([models](../capabilities/models.md)).

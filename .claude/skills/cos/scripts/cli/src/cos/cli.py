@@ -26,7 +26,15 @@ def _parser() -> argparse.ArgumentParser:
 
     s = cmd("setup", commands.setup, "write .agents/cos.json and install the agent files", False)
     s.add_argument("--force", action="store_true", help="replace locally edited agent files")
-    cmd("preflight", commands.preflight, "check P1 and P4–P7; exit 2 if any fails", False)
+    s.add_argument("--host", choices=["claude", "copilot"], help="default: detected")
+    cmd("preflight", commands.preflight, "check P1 and P4–P8; exit 2 if any fails", False)
+
+    s = cmd("models", commands.models_cmd, "show, check, get or audit the models of each role")
+    s.add_argument("action", nargs="?", default="show", choices=["show", "check", "get", "audit"])
+    s.add_argument("role", nargs="?", help="for get: the role to spawn")
+    s.add_argument("--cr", help="for get: the CR the spawn works on")
+    s.add_argument("--host", choices=["claude", "copilot"], help="default: detected")
+    s.add_argument("--session", help="for audit: the Copilot session id (default: this one)")
 
     s = cmd("open", commands.open_batch, "open a batch: CRs, branches, worktrees, brief", False)
     s.add_argument("batch")
@@ -110,6 +118,8 @@ def _parser() -> argparse.ArgumentParser:
     s.add_argument("--by", choices=["role", "cr"], default="role")
     s.add_argument("--update", action="store_true", help="store the total as spent_usd")
     s.add_argument("--transcript", help="session uuid (default: the recorded one)")
+    s.add_argument("--host", choices=["claude", "copilot"],
+                   help="default: detected; Copilot needs copilot-session-usage >= 1.0")
     return p
 
 

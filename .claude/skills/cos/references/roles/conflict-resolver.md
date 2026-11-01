@@ -12,4 +12,4 @@ survives.
   - Push: `$COS ship` pushes after it ends.
   - Decide a conflict between two product intents: hand it back as a question.
 - **Capabilities:** ship-and-forge, gates, safety.
-- **Model:** `models.conflict-resolver`, else `inherit`.
+- **Model:** `$COS models`, role `conflict-resolver` ([models](../capabilities/models.md)).

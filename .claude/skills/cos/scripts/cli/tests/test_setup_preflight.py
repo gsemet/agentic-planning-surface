@@ -16,9 +16,9 @@ def test_setup_installs_agents_with_absolute_cos(repo, cos):
         assert "{{" not in text
         assert "model: inherit" in text
         assert f"references/roles/{name}.md" in text
-        assert f"uv run --script {SKILL / 'cli' / 'cos.py'}" in text
+        assert f"uv run --script {SKILL / 'scripts' / 'cli' / 'cos.py'}" in text
         assert "# cos-template: 0.1.0" in text
-    assert cos("setup")[1][0] == "setup: nothing to change"
+    assert cos("setup")[1][0] == "setup: nothing to change (claude)"
 
 
 def test_setup_keeps_local_edits_unless_forced(repo, cos):
@@ -48,6 +48,17 @@ def test_preflight_passes_on_desktop(repo, cos, monkeypatch):
     assert code == 0, out
     assert out[-1] == "preflight passed"
     assert all(" ok " in ln for ln in out if ln[:2] in {"P1", "P4", "P5", "P6", "P7"})
+
+
+def test_preflight_accepts_a_copilot_agent_session(repo, cos, monkeypatch):
+    monkeypatch.setenv("COS_HOST", "copilot")
+    cos("setup")
+    code, out, _ = cos("preflight")
+    assert code == 2 and out[0].startswith("P1 FAIL") and "COPILOT_AGENT_SESSION_ID" in out[0]
+    monkeypatch.setenv("COPILOT_AGENT_SESSION_ID", "s-1")
+    code, out, _ = cos("preflight")
+    assert code == 0, out
+    assert out[0].startswith("P1 ok   host is Copilot")
 
 
 def test_preflight_fails_without_agent_files(repo, cos, monkeypatch):
@@ -88,10 +99,7 @@ def test_nothing_is_created_when_preflight_fails(repo, cos, monkeypatch):
 
 def test_setup_writes_the_configured_model(repo, cos):
     cos("setup")
-    p = repo / ".agents" / "cos.json"
-    cfg = json.loads(p.read_text())
-    cfg["models"] = {"verifier": "opus"}
-    p.write_text(json.dumps(cfg))
+    (repo / ".agents" / "cos.models.yml").write_text("claude:\n  roles:\n    verifier: opus\n")
     cos("setup")
     assert "model: opus" in (repo / ".claude/agents/verifier.md").read_text()
     assert "model: inherit" in (repo / ".claude/agents/coder.md").read_text()

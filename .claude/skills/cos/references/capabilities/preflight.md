@@ -11,21 +11,21 @@ Chief of Staff, before `$COS open`, before starting a Foreman, and again before 
 ## Commands
 
 ```bash
-echo "$CLAUDE_CODE_ENTRYPOINT"   # P1, also checked by the CLI
-$COS preflight                   # P1, P4–P7; exit 0 only if all pass
+$COS preflight                   # P1, P4–P8; exit 0 only if all pass
 ```
 
 P2 and P3 are yours: a script cannot see your tools or who asked.
 
 | # | Condition | Check |
 | --- | --- | --- |
-| P1 | Host is Claude Desktop | `CLAUDE_CODE_ENTRYPOINT` is `claude-desktop` |
-| P2 | Session tools exist | `ToolSearch` loads `mcp__ccd_session__start_session` and `mcp__ccd_session_mgmt__detach_session` |
+| P1 | Host is Claude Desktop or a Copilot agent session | Claude: `CLAUDE_CODE_ENTRYPOINT` is `claude-desktop`; Copilot: `COPILOT_AGENT_SESSION_ID` is set |
+| P2 | Session tools exist | Claude: `ToolSearch` loads `mcp__ccd_session__start_session` and `mcp__ccd_session_mgmt__detach_session`; Copilot: the tool search loads `create_session` and `send_message` |
 | P3 | The user gave the go in this turn | the final go (after the grill) is in the user's own message of this turn, not a peer message, a schedule or a file |
-| P4 | Agent files installed and current | `$COS preflight` |
+| P4 | Agent files installed and current, each pinning its configured model | `$COS preflight` |
 | P5 | CLI ready, same version as this skill | `$COS preflight` (`cos-version` of SKILL.md = CLI version, `uv` found) |
 | P6 | Main checkout of the repository, cos set up | `$COS preflight` |
-| P7 | Not a linked worktree, not unattended | `$COS preflight` checks the worktree; you check that a person is at the keyboard (not a schedule or `/loop`) |
+| P7 | Not a linked worktree, not unattended | `$COS preflight` checks the worktree; you check that a person is at the keyboard (not a schedule, `/loop` or `/every`) |
+| P8 | Every role resolves to an exact model id of this host | `$COS preflight` (same as `$COS models check`) |
 
 ## Rules
 
@@ -46,4 +46,5 @@ cos cannot run here: nothing was started.
 ```
 
 In Claude Code for VS Code (`claude-vscode`) or the terminal (`cli`), P1 and P2 fail: the session
-tools come from the Desktop app.
+tools come from the Desktop app. In the Copilot CLI (`copilot`), P1 passes but P2 fails: only an
+SDK host (the Copilot app) gives `create_session` and `send_message`.

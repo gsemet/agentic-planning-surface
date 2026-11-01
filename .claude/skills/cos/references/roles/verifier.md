@@ -10,5 +10,5 @@
   - Trust the Coder's or Inspector's notes, or green CI, as proof.
   - Edit code.
 - **Capabilities:** gates, evidence, safety.
-- **Model:** `models.verifier`, else `inherit`. A model of another family than the Coder's gives
-  a more independent check.
+- **Model:** `$COS models`, role `verifier` ([models](../capabilities/models.md)). A model of
+  another family than the Coder's gives a more independent check.

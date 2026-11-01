@@ -21,6 +21,10 @@ Only the rules a capable model would not follow on its own here. Each has its re
    wrong PR; report it instead.
 9. **Stop on a stale epoch.** Exit 3 means another Foreman runs the batch; two Foremen spawn the
    same CR twice.
-10. **No fallback.** When a precondition fails, start nothing and say which one failed. A quieter
-    design the user did not choose is worse than a clear stop.
+10. **Fail, never improvise.** When a precondition fails, a capability is missing (a tool, a
+    command, a host feature the skill names) or a model is not available exactly as configured,
+    stop: start nothing, return `blocked` and say which one failed, with the error as printed.
+    Never substitute another tool, model, mechanism or estimate, even one that looks close. The
+    goal is the most reliable and cheapest team: a workaround costs tokens, hides the defect and
+    makes the next run unpredictable, while a clear stop costs one question to the user.
 11. **Never merge.** The user merges; the batch lands only when every CR is merged or cancelled.

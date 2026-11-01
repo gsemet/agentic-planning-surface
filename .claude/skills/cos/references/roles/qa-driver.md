@@ -8,5 +8,5 @@
   - Fix a finding: the CR's next round does.
   - Test from the diff alone: every finding comes from the running artifact.
   - Start children: it has no Agent tool.
-- **Capabilities:** qa, evidence, events-and-state, messaging, safety.
-- **Model:** `models.qa-driver`, else `inherit`.
+- **Capabilities:** qa, evidence, events-and-state, messaging, models, safety.
+- **Model:** `$COS models`, role `qa-driver` ([models](../capabilities/models.md)).

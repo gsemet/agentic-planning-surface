@@ -1,6 +1,7 @@
 """The forge, through its CLI. GitHub (`gh`) is supported; GitLab is refused with exit 4.
 
-`COS_GH` names the `gh` executable (tests put a fake one on it).
+`COS_GH`, else `gh` in .agents/cos.json, names the `gh` executable (tests and simulations put a
+fake one there).
 """
 from __future__ import annotations
 
@@ -21,7 +22,7 @@ def _check_forge(config: dict) -> None:
 
 def gh(*args: str, cwd=None, config: dict | None = None) -> str:
     _check_forge(config or {})
-    exe = os.environ.get("COS_GH", "gh")
+    exe = os.environ.get("COS_GH") or (config or {}).get("gh") or "gh"
     env = {**os.environ, "GH_PAGER": "cat", "GH_PROMPT_DISABLED": "1", "NO_COLOR": "1"}
     try:
         p = subprocess.run([exe, *args], cwd=cwd, capture_output=True, text=True, env=env,

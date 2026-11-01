@@ -15,7 +15,7 @@ from pathlib import Path
 
 SKILL = Path(__file__).resolve().parents[2]
 WORK = Path.cwd()
-ENV = {**os.environ, "PYTHONPATH": str(SKILL / "cli" / "src"), "COS_SKILL_DIR": str(SKILL)}
+ENV = {**os.environ, "PYTHONPATH": str(SKILL / "scripts" / "cli" / "src"), "COS_SKILL_DIR": str(SKILL)}
 
 
 def sh(*args):

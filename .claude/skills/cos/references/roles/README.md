@@ -20,10 +20,15 @@ engineering practice is left to the model.
 
 ## Model and effort
 
-No role has a fixed model. Each agent file is written by `$COS setup` with
-`model: <models.<role> in .agents/cos.json>`, `inherit` when unset. The Chief of Staff may set a
-model per CR at the grill: it goes in the brief's **Models** line, and the Foreman or Driver
-passes it as the `model` of that spawn. Nothing escalates on its own.
+No role has a fixed model in its card. `$COS models` resolves each role to one exact model id of
+the host: the skill's base list (`../models/claude.yml`, `../models/copilot.yml`), then the
+user's `~/.config/cos/models.yml`, then the project's `.agents/cos.models.yml`. `$COS setup`
+pins that id in each agent file. The Chief of Staff may set a model per role or per CR at the
+grill, in the brief's **Models** line; the Foreman or Driver passes what `$COS models get`
+prints for that spawn. Nothing escalates on its own. The reasoning effort works the same way,
+from the `effort` section of those files: unset means the user's own setting. A role's tools
+are fixed by the skill per host (`tools` section), never by an override. See
+[../capabilities/models.md](../capabilities/models.md).
 
 ## Every card has
 
@@ -31,6 +36,6 @@ passes it as the `model` of that spawn. Nothing escalates on its own.
 - **Inputs** and **output**: what it reads, what it leaves behind, and where.
 - **Never**: the non-obvious limits.
 - **Capabilities**: the files of [../capabilities/](../capabilities/) it reads, and only those.
-- **Model**: the placeholder. Fill it in `.agents/cos.json` or leave `inherit`.
+- **Model**: the role's entry in `$COS models` (model and effort).
 
 The principles every role follows are in [../principles.md](../principles.md).

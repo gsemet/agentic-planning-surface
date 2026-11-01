@@ -27,7 +27,6 @@ DEFAULT_CONFIG = {
     "max_rounds": 3,
     "stale_minutes": 90,
     "gates": {"fast": [], "long": []},
-    "models": {},  # role → model for its agent file; unset roles get `inherit`
 }
 
 # Statuses a CR can hold. `working` means a live Driver owns it.

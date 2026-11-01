@@ -16,11 +16,17 @@ and `--epoch <n>` on every `$COS` call below; exit 3 means another Foreman owns 
 at once, without a message.
 
 1. `$COS foreman transcript <your session uuid> --batch <batch> --epoch <n>` (the uuid is
-   `$CLAUDE_CODE_SESSION_ID`, else the newest `*.jsonl` of this folder in `~/.claude/projects/`).
+   `$CLAUDE_CODE_SESSION_ID` on Claude, `$COPILOT_AGENT_SESSION_ID` on Copilot). The variable is
+   empty: you are `blocked`; never guess the uuid from files.
 2. Read `brief.md` and `$COS status --batch <batch>`.
-3. Heartbeat: the `/loop` skill in dynamic mode with the prompt
-   `cos heartbeat <batch> epoch <n>`, each wake scheduled with `ScheduleWakeup` at **3300 s**.
-   The wake fires late by the length of your turn; past 3600 s your Drivers' cache is gone.
+3. Heartbeat: its interval is the `heartbeat:` line of `$COS models get foreman` (per host,
+   just under the prompt-cache TTL of the host's Claude models: `55m` on Claude Code, `4m` on
+   Copilot, where that cache lives 5 minutes).
+   - Claude Code: the `/loop` skill in dynamic mode with the prompt
+     `cos heartbeat <batch> epoch <n>`, each wake scheduled with `ScheduleWakeup` at that interval.
+   - Copilot: you arm nothing (the model tool that schedules a wake is not available). The Chief
+     of Staff arms `/every <interval> cos heartbeat <batch> epoch <n>` in your chat after your
+     `ready`. No wake arrives: you are `blocked`; never invent another timer.
 4. `$COS event start` and carry out its actions; then send `[foreman→cos] ready <batch>`.
 
 ## Events
@@ -39,21 +45,31 @@ at once, without a message.
 
 ## Actions
 
-Carry out every line, in order:
+Carry out every line, in order. Tool names differ per host; a tool the table does not name for
+your host does not exist: the action is refused, never replaced.
+
+| Generic | Claude Code | Copilot |
+| --- | --- | --- |
+| Spawn a Driver | `Agent`, `run_in_background: true` | `task`, `mode: background`, `agent_type: <role>` |
+| Message a Driver | `SendMessage` to the agent id | `write_agent` to the agent id |
+| Message the Chief of Staff | `SendMessage` to its session id | `send_message` to its session link |
+| Stop a Driver | `TaskStop` | none: `write_agent` `[foreman→driver <cr>] stop`, it ends at its next turn |
 
 | Line | Do |
 | --- | --- |
-| `spawn <cr> [resume …]` | `Agent`, `subagent_type: cr-driver`, `run_in_background: true`, prompt `CR <cr> of batch <batch>` plus the rest of the line; then `$COS agents set <cr> <agent-id>` |
+| `spawn <cr> [resume …]` | spawn `cr-driver` in the background, prompt `CR <cr> of batch <batch>` plus the rest of the line; then `$COS agents set <cr> <agent-id>` |
 | `spawn qa:<cr>` / `spawn stack` | the same with `qa-driver` / `stack-driver`; record it as `qa:<cr>` / `stack` |
-| `message <cr> <text>` | `SendMessage` to the CR's agent (`$COS agents get <cr>`): `[foreman→driver <cr>] <text>` |
+| `message <cr> <text>` | message the CR's agent (`$COS agents get <cr>`): `[foreman→driver <cr>] <text>` |
 | `message stack <text>` | the same to the stack driver |
-| `cancel <cr>` | `TaskStop` its agent, then `$COS cancel <cr>`, and carry out the lines it prints |
+| `cancel <cr>` | stop its agent, then `$COS cancel <cr>`, and carry out the lines it prints |
 | `ask-cos <kind> <text>` | one message to the Chief of Staff: `[foreman→cos] ask <kind> <text>` |
 | `ok O-<k> …` | `[foreman→cos] ok O-<k> …` |
-| `land` | `$COS land`, send `[foreman→cos] final <report path>`, schedule no wake, end |
+| `land` | `$COS land`, send `[foreman→cos] final <report path>`, schedule no wake, end. On Copilot a wake may still come: answer `landed` with no tool call |
 | `none`, `none landed` | nothing |
 
-If the brief names a model for a role or a CR, pass it as the `model` of that spawn.
+Before each spawn, run `$COS models get <role> --cr <cr>` and do exactly what it prints:
+`model: omit` passes no `model`; `model: <id>` passes that id, character for character
+([models](models.md)).
 
 ## Rules
 

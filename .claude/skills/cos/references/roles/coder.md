@@ -9,4 +9,5 @@
   - Leave the CR worktree, or edit another CR.
   - Silence a failing gate (skip, xfail, lower a threshold) to get green.
 - **Capabilities:** code-round, gates, safety.
-- **Model:** `models.coder`, else `inherit`; the brief may name one per CR.
+- **Model:** `$COS models`, role `coder` ([models](../capabilities/models.md)); the brief may
+  name one per CR.

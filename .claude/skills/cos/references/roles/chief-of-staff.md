@@ -13,5 +13,5 @@ one Foreman for the batch; then steer it and report.
   - Message a Driver directly: every order goes through the Foreman, with its order id.
   - Merge, or start a backlog item the user did not choose.
 - **Capabilities:** preflight, sessions, backlog-and-grill, batch-brief, steering, recovery,
-  cost, events-and-state.
+  cost, events-and-state, models.
 - **Model:** the user's session model.

@@ -16,5 +16,7 @@ then hand it back and end.
 - **Children it may start:** investigator (before round 1, when the code is unfamiliar), coder,
   inspector, debugger (a red it cannot explain), verifier (before every hand-back),
   conflict-resolver (`$COS ship` reports a failed rebase).
-- **Capabilities:** drive-cr, events-and-state, waits-and-ci, ship-and-forge, messaging, safety.
-- **Model:** `models.cr-driver`, else `inherit`; the brief may name one per CR.
+- **Capabilities:** drive-cr, events-and-state, waits-and-ci, ship-and-forge, messaging, models,
+  safety.
+- **Model:** `$COS models`, role `cr-driver` ([models](../capabilities/models.md)); the brief may
+  name one per CR.

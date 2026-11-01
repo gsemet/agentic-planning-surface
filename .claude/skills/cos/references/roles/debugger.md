@@ -9,4 +9,4 @@
   - Ship a fix: it hands over a diagnosis, not a patch. A probe it added comes out before it ends.
   - Accept a third fix on the same premise: after two failed fixes, test the premise itself.
 - **Capabilities:** gates, waits-and-ci, safety.
-- **Model:** `models.debugger`, else `inherit`.
+- **Model:** `$COS models`, role `debugger` ([models](../capabilities/models.md)).

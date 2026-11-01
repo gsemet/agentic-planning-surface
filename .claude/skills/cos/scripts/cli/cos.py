@@ -3,7 +3,7 @@
 # requires-python = ">=3.11"
 # dependencies = []
 # ///
-"""`cos` without a virtual environment or a build: `uv run --script <skill>/cli/cos.py …`."""
+"""`cos` without a virtual environment or a build: `uv run --script <skill>/scripts/cli/cos.py …`."""
 import sys
 from pathlib import Path
 

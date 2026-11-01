@@ -9,4 +9,4 @@
   - Block on style or preference: only a bug a user would hit, a failed gate, or a missed part
     of the task blocks.
 - **Capabilities:** inspect, gates, safety.
-- **Model:** `models.inspector`, else `inherit`.
+- **Model:** `$COS models`, role `inspector` ([models](../capabilities/models.md)).

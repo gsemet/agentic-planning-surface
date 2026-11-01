@@ -132,3 +132,93 @@ def test_cost_by_role_and_cr(ready, cos, tmp_path):
 def test_cost_without_transcript_is_explained(ready, cos):
     code, _, err = cos("cost")
     assert code == 2 and "cos foreman transcript" in err
+
+
+def test_second_foreman_cannot_claim_the_epoch(ready, cos):
+    cos("foreman", "set", "chat-1")
+    assert cos("foreman", "transcript", "uuid-1", "--epoch", 1)[0] == 0
+    assert cos("foreman", "transcript", "uuid-1", "--epoch", 1)[0] == 0  # the same Foreman again
+    code, _, err = cos("foreman", "transcript", "uuid-2", "--epoch", 1)
+    assert code == 3 and "already run by transcript uuid-1" in err
+    cos("foreman", "set", "chat-2")
+    assert cos("foreman", "transcript", "uuid-2", "--epoch", 2)[0] == 0
+
+
+# ---- Copilot: copilot-session-usage --------------------------------------------------------
+
+def _fake_session_usage(tmp_path, monkeypatch, records=(), stderr="", code=0):
+    """A fake `copilot-session-usage` that checks its argv and prints `records` as JSONL."""
+    out = tmp_path / "csu-out.jsonl"
+    out.write_text("".join(json.dumps(r) + "\n" for r in records))
+    fake = tmp_path / "fake_csu.py"
+    fake.write_text(
+        "import sys\n"
+        "a = sys.argv[1:]\n"
+        "assert a[:2] == ['--agent', 'cli'] and a[2] == '--session-root', a\n"
+        "assert a[4:6] == ['calls', '--name'] and a[6] == '^uuid\\\\-c$', a\n"
+        f"sys.stdout.write(open({str(out)!r}).read())\n"
+        f"sys.stderr.write({stderr!r})\n"
+        f"sys.exit({code})\n")
+    monkeypatch.setenv("COS_SESSION_USAGE", f"{sys.executable} {fake}")
+
+
+def _call(agent_id, usd, source="billed", agent=None):
+    return {"session_id": "uuid-c", "model": "gpt-5.6-luna", "llm_calls": 1,
+            "estimated_usd": usd, "cost_source": source, "agent": agent, "agent_id": agent_id}
+
+
+def _copilot_batch(ready, cos, tmp_path, monkeypatch):
+    monkeypatch.setenv("COS_HOST", "copilot")
+    cos("foreman", "set", "local_x")
+    cos("foreman", "transcript", "uuid-c", "--epoch", 1)
+    cos("event", "start")
+    cos("agents", "set", "CR-101", "a1")
+    events = tmp_path / "copilot-home" / "session-state" / "uuid-c" / "events.jsonl"
+    events.parent.mkdir(parents=True)
+    events.write_text("".join(json.dumps(
+        {"type": "subagent.started", "agentId": aid,
+         "data": {"agentType": role, "agentDisplayName": name}}) + "\n"
+        for aid, role, name in (("a1", "cr-driver", "driver"), ("c9", "coder", "CR-102 coder"),
+                                ("x7", "coder", "coder"))))
+
+
+def test_copilot_cost_uses_session_usage_records(ready, cos, tmp_path, monkeypatch):
+    _copilot_batch(ready, cos, tmp_path, monkeypatch)
+    _fake_session_usage(tmp_path, monkeypatch, [
+        _call(None, 1.0), _call("a1", 0.5), _call("c9", 0.25), _call("x7", 0.125)])
+    code, out, _ = cos("cost", "--update")
+    assert code == 0
+    assert out == ["b1: $1.875 over 4 model calls", "foreman: $1.000 (1 calls)",
+                   "cr-driver: $0.500 (1 calls)", "coder: $0.375 (2 calls)"]
+    assert cos("cost", "--by", "cr")[1][1:] == [
+        "foreman: $1.000 (1 calls)", "CR-101: $0.500 (1 calls)", "CR-102: $0.250 (1 calls)",
+        "other: $0.125 (1 calls)"]
+    assert "spent $1.88" in cos("status")[1][0]
+
+
+def test_copilot_cost_says_when_calls_are_estimated(ready, cos, tmp_path, monkeypatch):
+    _copilot_batch(ready, cos, tmp_path, monkeypatch)
+    _fake_session_usage(tmp_path, monkeypatch, [_call(None, 1.0), _call("a1", 0.5, "estimated")])
+    assert cos("cost")[1][0] == "b1: $1.500 over 2 model calls (1 estimated, not billed)"
+
+
+@pytest.mark.parametrize("setup, message", [
+    (lambda tmp, mp: mp.setenv("COS_SESSION_USAGE", str(tmp / "nowhere")), "not found"),
+    (lambda tmp, mp: _fake_session_usage(tmp, mp, stderr="Error: No such command 'calls'.",
+                                         code=2), "older than 1.0"),
+    (lambda tmp, mp: _fake_session_usage(tmp, mp, stderr="boom", code=1), "failed (1): boom"),
+    (lambda tmp, mp: _fake_session_usage(tmp, mp), "no priced call"),
+    (lambda tmp, mp: _fake_session_usage(tmp, mp, [_call(None, None)]), "has no price"),
+])
+def test_copilot_cost_fails_instead_of_guessing(ready, cos, tmp_path, monkeypatch, setup,
+                                                message):
+    _copilot_batch(ready, cos, tmp_path, monkeypatch)
+    setup(tmp_path, monkeypatch)
+    code, out, err = cos("cost")
+    assert code != 0 and message in err and not out
+
+
+def test_copilot_cost_without_transcript_names_the_copilot_variable(ready, cos, monkeypatch):
+    monkeypatch.setenv("COS_HOST", "copilot")
+    code, _, err = cos("cost")
+    assert code == 2 and "$COPILOT_AGENT_SESSION_ID" in err

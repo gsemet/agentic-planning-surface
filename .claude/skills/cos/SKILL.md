@@ -1,24 +1,34 @@
 ---
 name: cos
+disable-model-invokation: "true"
+icon: 🏗️
+color: yellow
 description: >-
-  Chief of Staff for a change-request team on Claude Desktop (design 5). Talks with the user,
-  keeps the backlog and the grill, and on the user's request starts one Foreman as a nested,
-  detached session that owns Drivers, a stack driver and a QA driver as background subagents,
+  Chief of Staff for a change-request team on Claude Desktop or a Copilot SDK host (design 5). Talks with the user,
+  keeps the backlog and the grill, and on the user's request starts one Foreman as a nested
+  session that owns Drivers, a stack driver and a QA driver as background subagents,
   each running Investigators, Coders, Inspectors, Debuggers, Verifiers and Conflict resolvers.
   Mechanical steps run in the `cos` Python CLI (uv run). Use when the user asks to run CRs or a
   batch, "run the P1s", build a PR stack, steer a running batch (add, drop, reorder a CR), check
   its status or cost, resume after a restart, or set up cos in a project. Refuses to start
-  anything outside Claude Desktop.
+  anything outside Claude Desktop or a Copilot SDK host (create_session, send_message).
 ---
 
 # cos: Chief of Staff
 
 cos-version: 0.1.0
 
-`$COS` means `uv run --script <this skill's folder>/cli/cos.py`, with the absolute path of the
-folder this file is in (no virtual environment, no build, no network). Agent files installed by `$COS setup` carry the absolute path already.
+`$COS` means `uv run --script <this skill's folder>/scripts/cli/cos.py`, with the absolute path
+of the folder this file is in (no virtual environment, no build, no network). Agent files
+installed by `$COS setup` carry the absolute path already.
 Design and build spec: `projects/aps/changes/1-inbox/workflow-optimization/design-5-nested-session/`
 in the agentic-planning-surface repository.
+
+## 0. Definitions
+
+Read [definitions](references/definitions.md) first, whatever your role: what a Change Request
+is (its local folder, `intake/`, `01-intent.md`, `02-answers.md`) and what the Change
+Specification is (`03-change-spec.md`).
 
 ## 1. Who you are
 
@@ -33,6 +43,11 @@ in the agentic-planning-surface repository.
 
 Every role follows the [principles](references/principles.md).
 
+**Fail, never improvise.** This skill aims at the most reliable and cheapest team. When a
+capability it names (a tool, a `$COS` command, a host feature) or a configured model is not
+available exactly as written, stop and report it as `blocked` with the error; never look for
+another tool, a look-alike model, a workaround or an estimate.
+
 ## 2. Entry points (Chief of Staff)
 
 | The user asks… | Do | Read |
@@ -44,6 +59,7 @@ Every role follows the [principles](references/principles.md).
 | add, drop, reorder, change a CR; "I merged #42" | `$COS order …`, then send its line to the Foreman | [steering](references/capabilities/steering.md) |
 | "I restarted the app", "resume" | liveness check; on the user's word, preflight and a new Foreman | [recovery](references/capabilities/recovery.md) |
 | "what did it cost?" | `$COS cost` | [cost](references/capabilities/cost.md) |
+| "which models?", change a model | `$COS models`; to change one, the user edits `.agents/cos.models.yml`, then `$COS models check`, `$COS setup` and a restart | [models](references/capabilities/models.md) |
 
 ## 3. Hard rules
 
@@ -64,11 +80,11 @@ Every role follows the [principles](references/principles.md).
 
 | Role | Runs as | Card | Capabilities |
 | --- | --- | --- | --- |
-| Chief of Staff | the user's Desktop session | [card](references/roles/chief-of-staff.md) | preflight, sessions, backlog-and-grill, batch-brief, steering, recovery, cost, events-and-state |
-| Foreman | nested detached session | [card](references/roles/foreman.md) | batch-orchestration, events-and-state, messaging, sessions, recovery, cost, safety |
-| CR Driver | `cr-driver`, background | [card](references/roles/cr-driver.md) | drive-cr, events-and-state, waits-and-ci, ship-and-forge, messaging, safety |
-| Stack driver | `stack-driver`, background | [card](references/roles/stack-driver.md) | stack, ship-and-forge, waits-and-ci, events-and-state, messaging, safety |
-| QA driver | `qa-driver`, background | [card](references/roles/qa-driver.md) | qa, evidence, events-and-state, messaging, safety |
+| Chief of Staff | the user's Desktop or Copilot session | [card](references/roles/chief-of-staff.md) | preflight, sessions, backlog-and-grill, batch-brief, steering, recovery, cost, events-and-state, models |
+| Foreman | nested session (detached on Desktop) | [card](references/roles/foreman.md) | batch-orchestration, events-and-state, messaging, sessions, recovery, cost, models, safety |
+| CR Driver | `cr-driver`, background | [card](references/roles/cr-driver.md) | drive-cr, events-and-state, waits-and-ci, ship-and-forge, messaging, models, safety |
+| Stack driver | `stack-driver`, background | [card](references/roles/stack-driver.md) | stack, ship-and-forge, waits-and-ci, events-and-state, messaging, models, safety |
+| QA driver | `qa-driver`, background | [card](references/roles/qa-driver.md) | qa, evidence, events-and-state, messaging, models, safety |
 | Investigator | `investigator`, foreground of a Driver | [card](references/roles/investigator.md) | code-round, safety |
 | Coder | `coder`, foreground of a Driver | [card](references/roles/coder.md) | code-round, gates, safety |
 | Inspector | `inspector`, foreground of a Driver | [card](references/roles/inspector.md) | inspect, gates, safety |
@@ -76,11 +92,16 @@ Every role follows the [principles](references/principles.md).
 | Verifier | `verifier`, foreground of a Driver | [card](references/roles/verifier.md) | gates, evidence, safety |
 | Conflict resolver | `conflict-resolver`, foreground of a Driver or the stack driver | [card](references/roles/conflict-resolver.md) | ship-and-forge, gates, safety |
 
-**Models are placeholders.** `models.<role>` in `.agents/cos.json` sets an agent file's model
-(`inherit` when unset); the brief's **Models** line sets one per CR for a spawn. Nothing
-escalates on its own. See [roles/README](references/roles/README.md).
+**Models come from the configuration, never from a guess.** `$COS models` resolves each role
+to one exact id for the host: the base lists [models/claude.yml](references/models/claude.yml)
+and [models/copilot.yml](references/models/copilot.yml), then `~/.config/cos/models.yml`, then
+`.agents/cos.models.yml`, then the brief's **Models** line. `$COS setup` pins the id in each
+agent file, with the role's reasoning effort when one is set (unset: the user's setting) and
+the host's own tool names; every spawn passes what `$COS models get` prints. Nothing escalates
+on its own.
+See [models](references/capabilities/models.md) and [roles/README](references/roles/README.md).
 
-**Playbooks:** [playbooks/](playbooks/) is empty on purpose; a playbook is added only when it
+**Playbooks:** [playbooks/](references/playbooks/) is empty on purpose; a playbook is added only when it
 encodes what the model would not do on its own.
 
 Capability files: [references/capabilities/](references/capabilities/). Message formats:

@@ -10,7 +10,7 @@ import pytest
 
 from cos.cli import main
 
-SKILL = Path(__file__).resolve().parents[2]
+SKILL = Path(__file__).resolve().parents[3]
 FAKE_GH = Path(__file__).with_name("fake_gh.py")
 
 
@@ -45,7 +45,11 @@ def repo(tmp_path, monkeypatch):
     monkeypatch.setenv("FAKE_GH_STATE", str(state))
     monkeypatch.setenv("COS_WAIT_INTERVAL", "0.05")
     monkeypatch.setenv("COS_CLAUDE_PROJECTS", str(tmp_path / "claude-projects"))
-    for var in ("COS_ROOT", "COS_BATCH", "CLAUDE_CODE_ENTRYPOINT"):
+    monkeypatch.setenv("COS_MODELS_USER", str(tmp_path / "user-models.yml"))
+    monkeypatch.setenv("COPILOT_HOME", str(tmp_path / "copilot-home"))
+    monkeypatch.setenv("COS_HOST", "claude")
+    for var in ("COS_ROOT", "COS_BATCH", "CLAUDE_CODE_ENTRYPOINT", "COPILOT_CLI",
+                "COPILOT_AGENT_SESSION_ID", "AI_AGENT"):
         monkeypatch.delenv(var, raising=False)
     return work
 

@@ -1,0 +1,12 @@
+{
+  "cr-driver": "3cf77b7f3ca0e1fa",
+  "stack-driver": "66932b8f7e2083ae",
+  "qa-driver": "37c6f280bc8e05b6",
+  "investigator": "52218a3c29da25b1",
+  "coder": "2cc037fea1999604",
+  "inspector": "58f9aeff246c7eab",
+  "debugger": "81eb3ff7a5875503",
+  "verifier": "74e47260a170b4c3",
+  "conflict-resolver": "78a4ce093d8d15b1",
+  "foreman": "dd1f680ee744b46b"
+}

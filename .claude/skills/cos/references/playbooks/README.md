@@ -1,13 +1,13 @@
 # Playbooks
 
-Empty on purpose. The team works from its role cards ([../references/roles/](../references/roles/))
-and the [principles](../references/principles.md); general engineering situations (a bug, a red
-check, a conflict) are left to the model.
+Empty on purpose. The team works from its role cards ([../roles/](../roles/)) and the
+[principles](../principles.md); general engineering situations (a bug, a red check, a conflict)
+are left to the model.
 
 A playbook belongs here only when it encodes a sequence the model would not follow on its own.
 Format, when one is added:
 
-- File `playbooks/<situation>.md`, title `### <Situation>`.
+- File `references/playbooks/<situation>.md`, title `### <Situation>`.
 - One line on when it applies.
 - Numbered steps, each ending in something checkable.
 - The roles that may follow it, and the reply or hand-back it ends with.

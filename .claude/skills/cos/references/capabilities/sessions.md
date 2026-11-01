@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Start, detach, find and talk to the Foreman's session on Claude Desktop.
+Start, detach, find and talk to the Foreman's session: Claude Desktop, or a Copilot SDK host.
 
 ## Who uses it
 
@@ -14,8 +14,8 @@ Start, in the turn where the user asked, after preflight and `$COS open`:
 
 ```json
 {"initiation": "user_asked", "title": "Foreman <batch> (<project>)", "name": "foreman-<batch>",
- "context": "fresh", "use_worktree": false, "model": "<models.foreman, or omit>",
- "effort": "<optional>", "permission_mode": "<the user's current mode, stated>",
+ "context": "fresh", "use_worktree": false, "model": "<the id `$COS models get foreman` prints, or omit>",
+ "effort": "<the level `$COS models get foreman` prints, or omit>", "permission_mode": "<the user's current mode, stated>",
  "prompt": "/cos foreman <batch> --cos <your session id> --epoch <n>",
  "background": "<content of the batch brief>"}
 ```
@@ -28,17 +28,41 @@ Find your own session id with `get_session("self")`.
 Messages: `SendMessage` with `to` set to the session id. Ask for one idle notice with
 `notify_when_idle: true` only when you must know the Foreman finished a turn.
 
+### Copilot SDK host
+
+The host has `create_session`, `send_message` and `get_session_context`, and none of `start_session`
+or `detach_session`.
+
+1. `create_session` with `model` = the id `$COS models get foreman` prints, `workspace` = this
+   repository, `worktree: false`, `title: Foreman <batch>`, and
+   `prompt: /cos foreman <batch> --cos <your session link> --epoch <n>`. Pass nothing else:
+   `create_session` takes no agent and no effort, so the Foreman runs at the session's effort
+   (the accepted exception `$COS models audit` reports as a NOTE).
+2. `$COS foreman set <returned chat id>`. The Foreman records its own runtime uuid
+   (`$COPILOT_AGENT_SESSION_ID`, not the chat id) with `$COS foreman transcript`.
+3. On `[foreman→cos] ready <batch>`: `send_message` to the Foreman chat
+   `/every <heartbeat> cos heartbeat <batch> epoch <n>` (the `heartbeat:` value of
+   `$COS models get foreman`). It is a host command: no model turn, no cost.
+4. `$COS models audit`: it must list that schedule; MISSING or MISMATCH is a stop.
+5. On `[foreman→cos] final …`: no tool can delete the schedule (only the host's `/every` dialog,
+   key `x`). Tell the user, in that turn: "Open the Foreman chat, type `/every`, delete
+   `cos heartbeat <batch> epoch <n>`." Until then each wake costs one short Foreman turn.
+
+A nested chat cannot be detached; there is nothing to detach. `/agent foreman` cannot be
+selected from here (the host deselects it): never rely on it. In the Copilot CLI, the user starts
+the Foreman with `copilot --agent foreman` instead.
+
 ## Rules
 
 - Never start a session from a turn the user did not start (peer message, schedule, note): the
   app refuses it, and so do you.
-- Detach at once: a linked Foreman wakes the Chief of Staff after every turn ($0.03–0.05 each).
+- Detach at once (Claude Desktop): a linked Foreman wakes the Chief of Staff after every turn ($0.03–0.05 each).
 - A message to a busy session waits until its turn ends: 15–54 s measured. Keep turns short.
 - The Foreman cannot start sessions. Its team is subagents.
 
 ## Failure handling
 
-- `start_session` refused: report the app's text to the user; do not retry with other settings.
+- `start_session` or `create_session` refused: report the app's text to the user; do not retry with other settings.
 - `detach_session` fails: stop the Foreman (`stop_session`), tell the user with the app's text,
   and start nothing else.
 - The Foreman is not listed or does not answer a ping in about two minutes: read

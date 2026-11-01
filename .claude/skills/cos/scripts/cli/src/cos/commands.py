@@ -14,13 +14,16 @@ from pathlib import Path
 
 from . import __version__, costs, forge, procs
 from .decide import decide, fill_slots
-from .state import (DONE, EXIT_EXTERNAL, EXIT_PRECONDITION, EXIT_USAGE, LIVE, Batch, CosError,
+from .models import (CR_IN_NAME, INHERIT, ROLES, Models, brief_overrides, copilot_events,
+                     copilot_session, copilot_spawns, detect_host, expected)
+from .state import (DONE, EXIT_CONFLICT, EXIT_EXTERNAL, EXIT_PRECONDITION, EXIT_USAGE, LIVE,
+                    Batch, CosError,
                     Repo, age_minutes, check_epoch, find_cr_batch, git, next_cr_number, now,
                     read_batch, resolve_batch)
 
 DRIVER_TEMPLATES = ("cr-driver", "stack-driver", "qa-driver")
-TEMPLATES = DRIVER_TEMPLATES + ("investigator", "coder", "inspector", "debugger", "verifier",
-                                 "conflict-resolver")
+TEMPLATES = ("foreman",) + DRIVER_TEMPLATES + ("investigator", "coder", "inspector", "debugger",
+                                               "verifier", "conflict-resolver")
 TEMPLATE_VERSION = re.compile(r"^# cos-template: (\S+)$", re.M)
 
 
@@ -36,7 +39,7 @@ def skill_dir() -> Path:
 
 
 def cos_prefix() -> str:
-    return f"uv run --script {skill_dir() / 'cli' / 'cos.py'}"
+    return f"uv run --script {skill_dir() / 'scripts' / 'cli' / 'cos.py'}"
 
 
 def _slug(text: str) -> str:
@@ -52,17 +55,60 @@ def _default_branch(root: Path) -> str:
     return git("branch", "--show-current", cwd=root, check=False) or "main"
 
 
-def _render_template(name: str, repo: Repo) -> str:
+def load_models(repo: Repo | None, host: str) -> Models:
+    legacy = (repo.config.get("models") or None) if repo else None
+    return Models(host, skill_dir(), repo.root if repo else None, legacy)
+
+
+def agent_path(repo: Repo, host: str, name: str) -> Path:
+    if host == "copilot":
+        return repo.root / ".github" / "agents" / f"{name}.agent.md"
+    return repo.root / ".claude" / "agents" / f"{name}.md"
+
+
+def _render_template(name: str, repo: Repo, models: Models) -> str:
     text = (skill_dir() / "assets" / "agents" / f"{name}.md").read_text()
-    model = (repo.config.get("models") or {}).get(name) or "inherit"
-    return (text.replace("{{COS}}", cos_prefix())
-                .replace("{{MODEL}}", model)
+    text = (text.replace("{{COS}}", cos_prefix())
                 .replace("{{SKILL}}", str(skill_dir()))
                 .replace("{{ROOT}}", str(repo.root)))
+    model = models.frontmatter_model(name)
+    effort = models.effort_of(name)
+    tools = models.tool_list(name)
+    if models.host == "claude":
+        text = text.replace("{{MODEL}}", model).replace("{{TOOLS}}", ", ".join(tools))
+        if effort:
+            text = re.sub(r"^(model: .*)$", rf"\1\neffort: {effort}", text, count=1, flags=re.M)
+        return text
+    # Copilot: name and description from the template, then Copilot's own keys.
+    _, front, body = text.split("---\n", 2)
+    keep = [ln for ln in front.splitlines() if ln.startswith(("name:", "description:"))]
+    if model:
+        keep += [f"model: {model}", "model-policy: required"]
+    if effort:
+        keep.append(f"reasoning-effort: {effort}")
+    keep += ["tools: [" + ", ".join(f'"{t}"' for t in tools) + "]",
+             "strict-tools-list: true",
+             # The Foreman is the only agent a session is started as; the rest are subagents.
+             f"user-invocable: {'true' if name == 'foreman' else 'false'}"]
+    return "---\n" + "\n".join(keep) + "\n---\n" + body
+
+
+# Frontmatter keys that come from the model config: a change in any of them is drift.
+PINNED_KEYS = ("model", "model-policy", "effort", "reasoning-effort", "tools", "strict-tools-list")
+
+
+def _pinned(text: str) -> dict[str, str]:
+    front = text.split("---\n", 2)[1] if text.startswith("---\n") else ""
+    return {m[1]: m[2].strip() for m in re.finditer(r"^([a-z-]+): (.+)$", front, re.M)
+            if m[1] in PINNED_KEYS}
 
 
 def setup(args) -> list[str]:
     repo = Repo.find()
+    host, _ = detect_host(getattr(args, "host", None))
+    models = load_models(repo, host)
+    if models.errors:
+        raise CosError("models: " + "; ".join(models.errors) + " (nothing installed)")
     out = []
     if not repo.config_path.exists():
         cfg = {**repo.config, "default_branch": _default_branch(repo.root)}
@@ -72,26 +118,30 @@ def setup(args) -> list[str]:
                    f"(default branch {cfg['default_branch']})")
         repo = Repo.find()
     (repo.batches).mkdir(parents=True, exist_ok=True)
-    agents = repo.root / ".claude" / "agents"
-    agents.mkdir(parents=True, exist_ok=True)
     installed_path = repo.root / ".agents" / "cos-installed.json"
     installed = json.loads(installed_path.read_text()) if installed_path.exists() else {}
     for name in TEMPLATES:
-        target = agents / f"{name}.md"
-        text = _render_template(name, repo)
+        target = agent_path(repo, host, name)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        rel = target.relative_to(repo.root)
+        key = name if host == "claude" else f"{host}/{name}"
+        text = _render_template(name, repo, models)
         if target.exists() and target.read_text() == text:
-            installed[name] = _digest(text)
+            installed[key] = _digest(text)
             continue
-        edited = target.exists() and _digest(target.read_text()) != installed.get(name)
+        edited = target.exists() and _digest(target.read_text()) != installed.get(key)
         if edited and not args.force:
-            out.append(f"kept .claude/agents/{name}.md (edited locally; --force to replace)")
+            drift = _pinned(target.read_text()) != _pinned(text)
+            out.append(f"kept {rel} (edited locally; --force to replace)"
+                       + (" but its model, effort or tools differ from the config"
+                          if drift else ""))
             continue
         target.write_text(text)
-        installed[name] = _digest(text)
-        out.append(f"installed .claude/agents/{name}.md")
+        installed[key] = _digest(text)
+        out.append(f"installed {rel}")
     installed_path.write_text(json.dumps(installed, indent=2) + "\n")
-    out.append("setup done" if out else "setup: nothing to change")
-    out.append("restart the Desktop session if agent files changed: agents load at start")
+    out.append(f"setup done ({host})" if out else f"setup: nothing to change ({host})")
+    out.append("restart the session if agent files changed: agents load at start")
     return out
 
 
@@ -117,26 +167,48 @@ def preflight(args) -> tuple[list[str], int]:
         ok &= passed
         lines.append(f"{tag} {'ok  ' if passed else 'FAIL'} {good if passed else bad}")
 
+    try:
+        host = detect_host()[0]
+    except CosError:
+        host = None
     entry = os.environ.get("CLAUDE_CODE_ENTRYPOINT", "")
-    check("P1", entry == "claude-desktop", "host is Claude Desktop",
-          f"host is {entry or 'unknown'} (CLAUDE_CODE_ENTRYPOINT), not claude-desktop")
+    if host == "copilot":
+        sid = os.environ.get("COPILOT_AGENT_SESSION_ID", "")
+        check("P1", bool(sid), "host is Copilot (P2: create_session and send_message must load)",
+              "host is Copilot but COPILOT_AGENT_SESSION_ID is empty: not a Copilot agent session")
+    else:
+        check("P1", entry == "claude-desktop", "host is Claude Desktop",
+              f"host is {entry or 'unknown'} (CLAUDE_CODE_ENTRYPOINT), not claude-desktop "
+              "or a Copilot SDK host")
     try:
         repo = Repo.find(Path(os.getcwd()))
     except CosError as e:
         repo = None
         check("P6", False, "", str(e))
     if repo:
-        agents = repo.root / ".claude" / "agents"
-        missing = [n for n in TEMPLATES if not (agents / f"{n}.md").exists()]
+        host = host or "claude"
+        try:
+            models = load_models(repo, host)
+            model_errors = models.errors
+        except CosError as e:
+            models, model_errors = None, [str(e)]
+        paths = {n: agent_path(repo, host, n) for n in TEMPLATES}
+        missing = [n for n in TEMPLATES if not paths[n].exists()]
         stale = [n for n in TEMPLATES if n not in missing
-                 and _version_of(agents / f"{n}.md") != __version__]
-        no_ttl = [n for n in DRIVER_TEMPLATES if n not in missing
-                  and "cacheTtl: 1h" not in (agents / f"{n}.md").read_text()]
+                 and _version_of(paths[n]) != __version__]
+        no_ttl = [n for n in DRIVER_TEMPLATES if host == "claude" and n not in missing
+                  and "cacheTtl: 1h" not in paths[n].read_text()]
+        drift = [n for n in TEMPLATES if models and not model_errors and n not in missing
+                 and _pinned(paths[n].read_text()) != _pinned(_render_template(n, repo, models))]
         problems = ([f"missing {', '.join(missing)}"] if missing else []) + \
                    ([f"old template {', '.join(stale)}"] if stale else []) + \
-                   ([f"no 1h cache in {', '.join(no_ttl)}"] if no_ttl else [])
+                   ([f"no 1h cache in {', '.join(no_ttl)}"] if no_ttl else []) + \
+                   ([f"model, effort or tools differ from the config in {', '.join(drift)}"]
+                    if drift else [])
         check("P4", not problems, "agent files installed and current",
               "; ".join(problems) + " (run `cos setup`, then restart the session)")
+        check("P8", not model_errors, f"models valid for {host}",
+              "; ".join(model_errors) + " (fix the model files, then `cos setup`)")
     has_uv = shutil.which("uv") is not None
     sv = _skill_version()
     check("P5", has_uv and sv == __version__, f"cos {__version__}, uv found",
@@ -152,7 +224,7 @@ def preflight(args) -> tuple[list[str], int]:
                       or ".").resolve()
         common = (repo.root / ".git").resolve()
         check("P7", gitdir == common, "not a linked worktree",
-              "this session runs in a linked worktree: detach_session would refuse the Foreman")
+              "this session runs in a linked worktree: the Foreman must start in the main checkout")
     lines.append("P2, P3 and 'not unattended' are the Chief of Staff's own checks")
     lines.append("preflight passed" if ok else "preflight FAILED: start nothing")
     return lines, 0 if ok else EXIT_PRECONDITION
@@ -229,7 +301,8 @@ def open_batch(args) -> list[str]:
                          f"Budget: {args.budget or 'none'}.\n- CRs, in order:\n" +
                          "".join(f"  - {c['id']}: {c['title']}{' (QA)' if c['qa'] else ''}\n"
                                  for c in b.data["crs"]) +
-                         "- Models (optional, per role or per CR; empty = agent file default):\n"
+                         "- Models (optional; `role=id` or `role@CR-n=id`, exact ids from "
+                         "`cos models`; empty = agent file default):\n"
                          "- Night policy card: one extra round per CR; a red PR goes to the top.\n"
                          "- Autonomous decisions:\n- Questions to bring back:\n")
         b.log("open", None, crs=[c["id"] for c in b.data["crs"]])
@@ -264,6 +337,11 @@ def foreman(args) -> list[str]:
             b.log("foreman", None, session=args.value, epoch=b.data["foreman_epoch"])
             return [f"foreman {args.value} epoch {b.data['foreman_epoch']}"]
         check_epoch(b, args.epoch)
+        claimed = b.data.get("foreman_transcript")
+        if claimed and claimed != args.value:
+            # One epoch, one Foreman: a second session that starts as Foreman must not take over.
+            raise CosError(f"epoch {b.data.get('foreman_epoch', 0)} of batch {b.id} is already run "
+                           f"by transcript {claimed}; stop now", EXIT_CONFLICT)
         b.data["foreman_transcript"] = args.value
         b.log("foreman-transcript", None, transcript=args.value)
         return [f"transcript {args.value}"]
@@ -511,9 +589,12 @@ def ship(args) -> list[str]:
     d = read_batch(repo, batch)
     c = next(x for x in d["crs"] if x["id"] == args.cr)
     wt = _worktree(c)
-    dirty = git("status", "--porcelain", "--untracked-files=no", cwd=wt)
+    dirty = git("status", "--porcelain", "--untracked-files=normal", cwd=wt)
     if dirty:
-        raise CosError(f"{args.cr}: uncommitted changes in the worktree; commit them first: "
+        what = ("untracked files" if all(ln.startswith("??") for ln in dirty.splitlines())
+                else "uncommitted changes")
+        raise CosError(f"{args.cr}: {what} in the worktree; commit them (or add them to "
+                       f".gitignore) first: "
                        f"{' '.join(ln.split(maxsplit=1)[-1] for ln in dirty.splitlines()[:5])}")
     remote = repo.config["remote"]
     if remote not in git("remote", cwd=wt).split():
@@ -643,14 +724,19 @@ def cost(args) -> list[str]:
     repo = Repo.find()
     batch = resolve_batch(repo, args.batch)
     d = read_batch(repo, batch)
+    host, _ = detect_host(args.host)
     uuid = args.transcript or d.get("foreman_transcript")
     if not uuid:
-        raise CosError("no Foreman transcript recorded: the Foreman runs "
-                       "`cos foreman transcript $CLAUDE_CODE_SESSION_ID`")
-    rows = costs.session_costs(costs.transcript_path(repo.root, uuid, repo.config))
-    if not rows:
-        raise CosError(f"transcript {uuid} not found under {costs.projects_dir(repo.config)}",
-                       EXIT_EXTERNAL)
+        var = "$COPILOT_AGENT_SESSION_ID" if host == "copilot" else "$CLAUDE_CODE_SESSION_ID"
+        raise CosError(f"no Foreman transcript recorded: the Foreman runs "
+                       f"`cos foreman transcript {var}`")
+    if host == "copilot":
+        rows = costs.copilot_session_costs(uuid)
+    else:
+        rows = costs.session_costs(costs.transcript_path(repo.root, uuid, repo.config))
+        if not rows:
+            raise CosError(f"transcript {uuid} not found under {costs.projects_dir(repo.config)}",
+                           EXIT_EXTERNAL)
     agent_cr = {}
     for c in d["crs"]:
         if c.get("agent"):
@@ -665,12 +751,170 @@ def cost(args) -> list[str]:
     groups: dict[str, list] = defaultdict(lambda: [0, 0.0])
     for r in rows:
         if args.by == "cr":
-            key = "foreman" if r["agent"] == "main" else agent_cr.get(r["agent"], "other")
+            named = CR_IN_NAME.search(r.get("description") or "")
+            key = ("foreman" if r["agent"] == "main"
+                   else agent_cr.get(r["agent"]) or (named.group(0) if named else "other"))
         else:
             key = r["type"]
         groups[key][0] += r["calls"]
         groups[key][1] += r["usd"]
-    lines = [f"{batch}: ${total:.3f} over {sum(r['calls'] for r in rows)} model calls"]
+    estimated = sum(r.get("estimated", 0) for r in rows)
+    lines = [f"{batch}: ${total:.3f} over {sum(r['calls'] for r in rows)} model calls"
+             + (f" ({estimated} estimated, not billed)" if estimated else "")]
     lines += [f"{k}: ${v[1]:.3f} ({v[0]} calls)"
               for k, v in sorted(groups.items(), key=lambda kv: -kv[1][1])]
     return lines
+
+
+# ---- models -----------------------------------------------------------------------------------
+
+def _batch_context(repo: Repo, batch: str | None, models: Models) -> tuple[dict, dict]:
+    """The brief's model overrides and the agent id → CR map, or empty ones without a batch."""
+    try:
+        batch_id = resolve_batch(repo, batch)
+    except CosError:
+        if batch:
+            raise
+        return {}, {}
+    overrides = brief_overrides(repo.batch_dir(batch_id) / "brief.md", models)
+    d = read_batch(repo, batch_id)
+    agent_cr = {}
+    for c in d.get("crs", []):
+        for key in ("agent", "qa_agent"):
+            if c.get(key):
+                agent_cr[c[key]] = c["id"]
+    return overrides, agent_cr
+
+
+def _locked(models: Models, role: str, want: str) -> str | None:
+    """Why a spawn cannot run `want` on Copilot, where agent files pin with model-policy."""
+    pinned = models.role(role)
+    if models.host != "copilot" or role == "foreman" or pinned == INHERIT or want == pinned:
+        return None
+    return (f"brief asks {role}={want} but the {role} agent file requires {pinned} "
+            "(model-policy: required, Copilot refuses the spawn): set it under `roles` in "
+            ".agents/cos.models.yml, run `cos setup`, restart the session")
+
+
+def models_cmd(args) -> tuple[list[str], int]:
+    repo = Repo.find()
+    host, why = detect_host(args.host)
+    models = load_models(repo, host)
+    if args.action == "check":
+        errors = list(models.errors)
+        if not errors:
+            try:
+                overrides, _ = _batch_context(repo, args.batch, models)
+                errors += [_locked(models, r, m) for (r, _c), m in overrides.items()
+                           if _locked(models, r, m)]
+            except CosError as e:
+                errors.append(str(e))
+        if errors:
+            return [f"models FAILED ({host}): start nothing"] + errors, EXIT_PRECONDITION
+        return [f"models ok ({host}): {len(ROLES)} roles, {len(models.catalog)} ids in catalog"], 0
+    if models.errors:
+        return [f"models FAILED ({host}): run `cos models check`"] + models.errors, \
+            EXIT_PRECONDITION
+    overrides, agent_cr = _batch_context(repo, args.batch, models)
+    if args.action == "show":
+        groups: dict[str, list[str]] = defaultdict(list)
+        for role in ROLES:
+            src = models.source[role]
+            effort = models.effort_of(role)
+            label = role + (f" [{effort}]" if effort else "")
+            groups[models.role(role)].append(label if src == "skill" else f"{label} ({src})")
+        lines = [f"{host} models (host from {why}); exact ids only; [effort] when set"]
+        lines += [f"{mid}: {', '.join(roles)}" for mid, roles in groups.items()]
+        lines.append(f"heartbeat: {models.heartbeat}" + (
+            "" if models.heartbeat_source == "skill" else f" ({models.heartbeat_source})"))
+        if overrides:
+            lines.append("brief: " + ", ".join(f"{r}{'@' + c if c else ''}={m}"
+                                                for (r, c), m in overrides.items()))
+        return lines, 0
+    if args.action == "get":
+        if not args.role:
+            raise CosError("models get <role> [--cr CR-n]", EXIT_USAGE)
+        want, src = expected(models, overrides, args.role, args.cr)
+        pinned = models.role(args.role)
+        level = models.effort_of(args.role)
+        if args.role == "foreman" and host == "copilot":
+            # create_session takes no effort and cannot select the foreman agent file.
+            effort = (f"effort: omit ({level} is in the agent file; create_session cannot set "
+                      "it, so the session's effort applies: accepted exception)" if level
+                      else "effort: omit (the user's setting)")
+        elif args.role == "foreman":
+            effort = (f"effort: {level} (copy this level exactly)" if level
+                      else "effort: omit (the user's setting)")
+        else:
+            effort = ("effort: omit (the agent file sets " + level + ")" if level
+                      else "effort: omit (the user's setting)")
+        tail = [effort]
+        if args.role == "foreman":
+            tail.append(f"heartbeat: {models.heartbeat} ({models.heartbeat_seconds()} s)")
+        if args.role != "foreman" and want == pinned:
+            return [f"model: omit (the agent file pins {pinned})", *tail], 0
+        if want == INHERIT:
+            if args.role == "foreman":
+                return ["model: omit (inherit)", *tail], 0
+            raise CosError(f"{src} asks `inherit` but the {args.role} agent file pins {pinned}: "
+                           "a spawn cannot unpin it; ask the user", EXIT_PRECONDITION)
+        if _locked(models, args.role, want):
+            raise CosError(_locked(models, args.role, want), EXIT_PRECONDITION)
+        return [f"model: {want} ({src}; copy this id exactly)", *tail], 0
+    # audit
+    if host != "copilot":
+        raise CosError("models audit reads Copilot event logs only", EXIT_USAGE)
+    try:
+        batch = resolve_batch(repo, args.batch)
+        data = read_batch(repo, batch)
+    except CosError:
+        batch, data = None, {}
+    foreman_uuid = data.get("foreman_transcript")
+    session = (args.session or foreman_uuid or os.environ.get("COPILOT_AGENT_SESSION_ID"))
+    if not session:
+        raise CosError("models audit --session <copilot session id>", EXIT_USAGE)
+    spawns = copilot_spawns(copilot_events(session))
+    bad, unchecked = [], 0
+    notes = []
+    if batch and session == foreman_uuid:
+        notes, bad = _audit_foreman(models, overrides, batch, data, copilot_events(session))
+    for s in spawns:
+        cr = agent_cr.get(s["agent"]) or s["cr"]
+        want, src = expected(models, overrides, s["role"], cr)
+        if want == INHERIT:
+            unchecked += 1
+        elif s["model"] != want:
+            bad.append(f"MISMATCH {s['role']} {cr or '-'} ran {s['model']}, expected {want} "
+                       f"({src}; selection {s['selection']})")
+        level = models.effort_of(s["role"])
+        if level and s["effort"] != level:
+            bad.append(f"MISMATCH {s['role']} {cr or '-'} ran effort {s['effort']}, "
+                       f"expected {level}")
+    lines = [f"audit {session}: {len(spawns)} cos spawns, {len(bad)} mismatched"
+             + (f", {unchecked} inherit (not checked)" if unchecked else "")]
+    return lines + notes + bad, EXIT_PRECONDITION if bad else 0
+
+
+def _audit_foreman(models: Models, overrides: dict, batch: str, data: dict,
+                   events: Path) -> tuple[list[str], list[str]]:
+    """The Foreman's own calls and heartbeat. A Foreman started with `create_session` runs at
+    the session's effort (the tool takes no effort): reported as a note, not a mismatch."""
+    facts = copilot_session(events)
+    notes, bad = [], []
+    want, src = expected(models, overrides, "foreman", None)
+    level = models.effort_of("foreman")
+    for (model, effort), n in sorted(facts["calls"].items(), key=lambda kv: -kv[1]):
+        notes.append(f"foreman ran {model} effort {effort} ({n} calls)")
+        if want != INHERIT and model != want:
+            bad.append(f"MISMATCH foreman ran {model}, expected {want} ({src})")
+        if level and effort != level:
+            notes.append(f"NOTE foreman effort {effort}, configured {level}: create_session "
+                         "cannot set it (accepted exception)")
+    prompt = f"cos heartbeat {batch} epoch {data.get('foreman_epoch', 0)}"
+    beats = [b for b in facts["schedules"] if b["prompt"] == prompt and b["recurring"]]
+    if not beats:
+        bad.append(f"MISSING heartbeat: no `/every` schedule with the prompt `{prompt}`")
+    elif all(b["interval_ms"] != models.heartbeat_seconds() * 1000 for b in beats):
+        bad.append(f"MISMATCH heartbeat every {beats[-1]['interval_ms'] // 1000} s, "
+                   f"expected {models.heartbeat} ({models.heartbeat_seconds()} s)")
+    return notes, bad

@@ -4,7 +4,7 @@
 prints, in order, and nothing else.
 
 - **Inputs:** task notifications of its Drivers, messages tagged `[cos→foreman]` and
-  `[driver …→foreman]`, its `/loop` wake.
+  `[driver …→foreman]`, its heartbeat wake.
 - **Output:** spawns, messages, cancels and `ask-cos` lines turned into one message each to the
   Chief of Staff.
 - **Never:**
@@ -12,8 +12,9 @@ prints, in order, and nothing else.
     Staff as a question.
   - Do a Driver's work, even a one-line fix: restart the Driver.
   - Run without its epoch. Exit 3 from `$COS` means another Foreman took over: stop at once.
-  - Let the wake slip past about 3300 s: the 1-hour cache of its Drivers expires at 3600 s.
+  - Run without its heartbeat at the interval `$COS models get foreman` prints (`55m` on
+    Claude Code, `4m` on Copilot): a later wake finds the prompt cache gone.
   - Spawn a Driver in the foreground: every Driver is `background: true`.
 - **Capabilities:** batch-orchestration, events-and-state, messaging, sessions, recovery, cost,
-  safety.
-- **Model:** `models.foreman`, else `inherit`.
+  models, safety.
+- **Model:** `$COS models`, role `foreman` ([models](../capabilities/models.md)).

@@ -23,7 +23,7 @@ branch, and a `brief.md` skeleton. Complete it from the grill:
 # Batch <batch>
 - CRs, in order: CR-101 (P1, QA), CR-102 (P1), ...
 - Mode: parallel | stack. Slots: 3. Budget: $<n> (stop at 100 %).
-- Models (optional, per role or per CR; empty = agent file default): coder CR-102 opus, ...
+- Models (optional; `role=id` or `role@CR-n=id`, exact ids from `cos models`; empty = agent file default): coder@CR-102=gpt-6.1-sol
 - Night policy card: one extra round per CR; a red PR goes to the top; infra re-runs within budget.
 - Autonomous decisions: ...
 - Questions the Foreman must bring back: ...
@@ -32,6 +32,11 @@ branch, and a `brief.md` skeleton. Complete it from the grill:
 ## Rules
 
 - Agent files must be installed before the Foreman starts (P4); `$COS setup` installs them.
+- **Models** holds exact ids from `$COS models` only; run `$COS models check` after writing it.
+  On Copilot it may change only the Foreman and roles left on `inherit` (agent files pin the
+  others with `model-policy: required`); see [models](models.md).
+  A model the user names that is not listed exactly is a question for the user
+  ([models](models.md)).
 - The brief is the Foreman's whole mission; never send the mission later by message only.
 
 ## Failure handling

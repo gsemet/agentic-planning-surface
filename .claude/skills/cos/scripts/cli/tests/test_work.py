@@ -62,10 +62,21 @@ def test_ship_opens_then_updates_the_pr(ready, cos, gh_state):
 def test_ship_refuses_a_dirty_worktree(ready, cos):
     wt = Path(cr(ready, "CR-101")["worktree"])
     (wt / "README.md").write_text("edited\n")
-    (wt / "loose.txt").write_text("untracked files do not block")
+    (wt / "loose.txt").write_text("a new file the coder forgot to add")
     body(ready, "CR-101")
     code, _, err = cos("ship", "CR-101")
     assert code == 2 and "uncommitted" in err and "README.md" in err
+
+
+def test_ship_refuses_a_forgotten_new_file(ready, cos):
+    wt = Path(cr(ready, "CR-101")["worktree"])
+    commit_in(wt, "done.txt")
+    (wt / "strutil.py").write_text("def f(): ...\n")
+    body(ready, "CR-101")
+    code, _, err = cos("ship", "CR-101")
+    assert code == 2 and "untracked files" in err and "strutil.py" in err
+    (wt / ".gitignore").write_text("strutil.py\n.gitignore\n")
+    assert cos("ship", "CR-101")[0] == 0
 
 
 def test_stack_ship_bases_on_the_previous_cr(repo, cos, gh_state):

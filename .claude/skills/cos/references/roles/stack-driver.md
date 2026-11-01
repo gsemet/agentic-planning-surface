@@ -10,5 +10,6 @@ on the one under it.
     Foreman as an anomaly for that CR's Driver.
   - Rebase a CR on anything but the CR below it, or the default branch for the first one.
 - **Children it may start:** conflict-resolver.
-- **Capabilities:** stack, ship-and-forge, waits-and-ci, events-and-state, messaging, safety.
-- **Model:** `models.stack-driver`, else `inherit`.
+- **Capabilities:** stack, ship-and-forge, waits-and-ci, events-and-state, messaging, models,
+  safety.
+- **Model:** `$COS models`, role `stack-driver` ([models](../capabilities/models.md)).

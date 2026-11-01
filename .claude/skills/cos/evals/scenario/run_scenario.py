@@ -45,7 +45,7 @@ class World:
         self.root = root
         self.work = root / "proj"
         self.gh_state = root / "gh-state.json"
-        self.env = {**os.environ, "PYTHONPATH": str(SKILL / "cli" / "src"),
+        self.env = {**os.environ, "PYTHONPATH": str(SKILL / "scripts" / "cli" / "src"),
                     "COS_SKILL_DIR": str(SKILL), "COS_GH": str(root / "bin" / "gh"),
                     "FAKE_GH_STATE": str(self.gh_state), "COS_WAIT_INTERVAL": "0.05",
                     "COS_CLAUDE_PROJECTS": str(root / "claude-projects"),
