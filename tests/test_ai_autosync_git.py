@@ -257,6 +257,29 @@ class AutosyncTests(unittest.TestCase):
         self.assertTrue((self.remote / "lfs" / "objects" / oid[:2] / oid[2:4] / oid).exists())
         self.assertEqual((self.root / "asset.bin").read_bytes(), b"existing binary contents")
 
+    @unittest.skipUnless(shutil.which("git-lfs"), "git-lfs is required")
+    def test_existing_binary_round_trips_into_and_out_of_lfs(self):
+        self.run_git(self.root, "lfs", "install", "--local")
+        payload = b"binary\x00contents\r\n\xff"
+        asset = self.root / "asset.bin"
+        attributes = self.root / ".gitattributes"
+        asset.write_bytes(payload)
+        self.run_git(self.root, "add", "asset.bin")
+        self.run_git(self.root, "commit", "-m", "add binary")
+
+        attributes.write_text("*.bin filter=lfs diff=lfs merge=lfs -text\n", encoding="utf-8")
+        autosync.synchronize(self.root, self.state, local_only=True)
+        pointer = subprocess.check_output(["git", "show", "HEAD:asset.bin"], cwd=self.root)
+        self.assertTrue(pointer.startswith(b"version https://git-lfs.github.com/spec/v1\n"))
+        self.assertEqual(asset.read_bytes(), payload)
+
+        attributes.unlink()
+        autosync.synchronize(self.root, self.state, local_only=True)
+        restored = subprocess.check_output(["git", "show", "HEAD:asset.bin"], cwd=self.root)
+        self.assertEqual(restored, payload)
+        self.assertEqual(asset.read_bytes(), payload)
+        self.assertEqual(self.run_git(self.root, "status", "--porcelain").stdout, "")
+
     def test_initialize_is_idempotent_and_preserves_existing_guidance(self):
         autosync.initialize(self.root)
         guidance = self.root / ".agents" / "guidelines" / "autosync.guidelines.md"
