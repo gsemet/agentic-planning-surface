@@ -9,6 +9,9 @@ It is meant to be messy and work like DropBox or Google Drive, but on git.
 
 Agent should be automatically started a background shell on this folder when in a session. If not, just say "start autosync" to your agent.
 
+Several agent sessions can be open at once: only one of them synchronizes, and another takes over
+when it closes. "start autosync" and "stop autosync" apply to every session.
+
 
 
 

@@ -93,10 +93,18 @@ also embeds.
 
 Implemented:
 
-- `init`, `start`, `sync`, `status`, and `approve` commands; `sync` asks a running watcher for an
-  immediate cycle instead of competing with it.
-- One watcher per checkout, enforced by a lock under the Git directory; its PID is recorded in
-  `.git/ai-autosync/watcher.json`. Stopping it with `SIGTERM` runs a final cycle.
+- `init`, `start`, `join`, `stop`, `sync`, `status`, and `approve` commands; `sync` asks the
+  running leader for an immediate cycle instead of competing with it.
+- Multi-session coordination: each agent session runs a detached participant bound to its agent
+  host process (`--owner-pid`). A non-blocking kernel file lock under `.git/ai-autosync/` elects a
+  single leader that watches and synchronizes; followers retry every second and take over when the
+  leader exits, because the operating system releases the lock with the process. Participants
+  leave when their owner process ends. The leader's PID is recorded in `watcher.json`, and
+  `status` lists every participant with its role.
+- Shared control: `start` and `stop` write `control.json` atomically, and every participant
+  follows it, so user orders apply to all sessions. `stop` makes the leader run a final cycle and
+  every participant go idle without leaving the group. When synchronization needs action, the
+  leader disables the group with a `blocked:` reason so followers do not repeat the failure.
 - Quiet period of 10 seconds, maximum interval of 30 seconds, and 30-second polling, configured in
   `.agents/autosync.toml`.
 - Commits through a private index while holding Git's index lock, preserving the user's staging
@@ -115,10 +123,10 @@ Implemented:
 
 Deviations from this specification:
 
-- **Lifecycle:** the watcher is a detached process that outlives agent sessions. A process
-  attached to an agent's shell stopped when the shell ended. Agent registration and stopping when
-  the last session ends are not implemented; the watcher runs until it is killed or needs
-  intervention.
+- **Lifecycle:** participants are detached processes bound to the agent host PID rather than to a
+  chat. In VS Code, several chats can share one `copilot-runtime` host, so closing a single chat
+  may not end its participant; it ends when the host (window or application) exits. Autosync
+  stops only on an explicit `stop` or a blocking incident, not when the last session ends.
 - **Remote integration:** incoming upstream commits are not rebased automatically. The watcher stops
   and hands integration to an agent, because rewriting the checkout while other processes edit it
   could lose work.

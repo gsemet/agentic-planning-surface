@@ -50,30 +50,58 @@ this repository.
 GUIDELINES = """\
 # Git autosync guidelines
 
-Run commands from the repository root. Before starting a watcher, check whether one is already
-running for this checkout:
+Run commands from the repository root. Every agent session that works in this checkout joins one
+autosync group. Group members coordinate through `.git/ai-autosync/`: a kernel file lock elects a
+single leader that watches and synchronizes; the others are followers that take over within about
+a second when the leader exits. Members leave the group when their owner process ends.
+
+## Joining the group
+
+First read the agent host PID in a normal, non-detached command, because a detached command has a
+supervisor as its parent:
+
+```bash
+echo $PPID
+```
+
+Then check the group and join it with a detached background process, so membership outlives the
+agent's turn:
 
 ```bash
 uv run scripts/ai-autosync-git.py status .
-cat .git/ai-autosync/watcher.json
+uv run scripts/ai-autosync-git.py join . --owner-pid HOST_PID
 ```
 
-If `watcher.json` names a live process, reuse it; do not start another one. Otherwise start the
-watcher as a detached background process so it outlives the agent's turn and session:
+`join` does not change whether autosync is enabled; it only adds this session as a candidate
+leader. Join once per session; if `status` already lists a participant with this session's owner
+PID that this session started, do not join again.
 
-```bash
-uv run scripts/ai-autosync-git.py start .
-```
+## User orders apply to every session
 
-A process attached to the agent's shell stops when that shell or session ends, so it does not
-provide continuous synchronization. Only one watcher can own a checkout: a second `start` exits
-with "Another autosync process owns this checkout." Stop the watcher with `kill PID`, using the PID
-recorded in `.git/ai-autosync/watcher.json`; it runs a final cycle before exiting.
+Orders are written to a shared control file and every participant follows them:
 
-When the watcher exits with an action-required message, inspect its status, resolve Git conflicts
-and other reported problems without discarding changes, then restart it. Remote integration that
-requires rewriting the checkout is intentionally handed to the agent rather than attempted while
-other processes may be editing. Never force-push.
+- "start autosync": run `uv run scripts/ai-autosync-git.py start . --enable-only`, which enables
+  autosync for the whole group, and join the group as above if this session is not a member yet.
+  Instead of both steps, a detached `start . --owner-pid HOST_PID` enables and joins in one
+  command.
+- "stop autosync": run `uv run scripts/ai-autosync-git.py stop .`. The leader runs a final cycle,
+  then every participant becomes idle while staying in the group, ready for the next `start`.
+
+Add `--local-only` to `start` to save local commits without fetching, scanning, or publishing; the
+mode also applies to the whole group. To leave the group entirely, stop a participant process with
+`kill PID`, using a PID listed by `status`. Never kill the leader to stop synchronization; use
+`stop`.
+
+`status` prints the control state, the leader PID, and every participant with its role
+(`leader`, `follower`, or `idle`).
+
+## Action required
+
+When synchronization needs attention, the leader disables autosync for the whole group with a
+`blocked:` reason, so followers do not repeat the failure. Inspect `status`, resolve Git conflicts
+and other reported problems without discarding changes, obtain any required approval, then run
+`start . --enable-only`. Remote integration that requires rewriting the checkout is intentionally
+handed to the agent rather than attempted while other processes may be editing. Never force-push.
 
 Run an immediate one-shot synchronization when needed:
 
@@ -81,10 +109,8 @@ Run an immediate one-shot synchronization when needed:
 uv run scripts/ai-autosync-git.py sync .
 ```
 
-If a watcher is running, this requests a new cycle from it rather than starting a competing Git
-operation. Use `--local-only` on `start` or `sync` to save local commits without fetching, scanning,
-or publishing; the watcher retains its selected mode, and a local-only request is refused by a
-watcher that can publish.
+If a leader is running, this requests a new cycle from it rather than starting a competing Git
+operation; a local-only request is refused by a leader that can publish.
 
 Existing staged changes and detected secrets require explicit human approval. Show the user the
 reported incident; never approve it on the user's behalf. An approval applies only to the exact
@@ -104,11 +130,12 @@ rewritten. Commit an attribute change through autosync rather than staging it by
 changes require approval first.
 
 Git LFS must be installed and its filters configured (`git lfs install`) before LFS attributes are
-used; otherwise the watcher stops instead of committing raw content. Do not set `core.autocrlf`
-to override the attributes.
+used; otherwise synchronization stops instead of committing raw content. Do not set
+`core.autocrlf` to override the attributes.
 
 Git, Git LFS, and Gitleaks must be available. The tool preserves Git hooks and does not push when
-secret scanning or the LFS upload fails. Its status and approvals are local to the checkout.
+secret scanning or the LFS upload fails. Its status, control, and approvals are local to the
+checkout.
 """
 
 
