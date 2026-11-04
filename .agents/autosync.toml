@@ -1,0 +1,4 @@
+# Timing values are in seconds.
+quiet_seconds = 10
+maximum_seconds = 30
+poll_seconds = 30

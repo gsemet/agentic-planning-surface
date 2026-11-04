@@ -1,1 +1,5 @@
 projects/*/.worktrees/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
