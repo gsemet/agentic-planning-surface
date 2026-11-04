@@ -818,7 +818,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     subparsers = parser.add_subparsers(dest="action", required=True)
-    for action in ("init", "start", "stop", "sync", "status"):
+    for action in ("init", "start", "join", "stop", "sync", "status"):
         subparser = subparsers.add_parser(action)
         subparser.add_argument("path", nargs="?", type=Path, default=Path("."))
         if action in ("start", "sync"):
@@ -826,11 +826,12 @@ def main() -> int:
                 "--local-only", action="store_true",
                 help="commit locally without fetching, scanning, or publishing",
             )
-        if action == "start":
+        if action in ("start", "join"):
             subparser.add_argument(
                 "--owner-pid", type=int, default=None,
                 help="leave the group when this process (the agent host) exits",
             )
+        if action == "start":
             subparser.add_argument(
                 "--enable-only", action="store_true",
                 help="enable autosync for all participants without joining",
@@ -856,9 +857,15 @@ def main() -> int:
             count = len(participants(state_dir))
             print(f"Autosync stopped for all sessions; {count} participant(s) now idle.")
             return 0
-        if args.action == "start":
+        if args.action in ("start", "join"):
             if args.owner_pid is not None and not pid_alive(args.owner_pid):
                 raise SyncError(f"Owner process {args.owner_pid} is not running")
+        if args.action == "join":
+            control = read_control(state_dir)
+            state = "enabled" if control["enabled"] else f"stopped ({control.get('reason', 'stopped')})"
+            print(f"Joining the autosync group; autosync is currently {state}.", flush=True)
+            return participate(root, state_dir, args.owner_pid)
+        if args.action == "start":
             set_control(state_dir, enabled=True, local_only=args.local_only, reason="started by user")
             mode = "local-only" if args.local_only else "remote"
             print(f"Autosync enabled for all sessions ({mode} mode).", flush=True)
