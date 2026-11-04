@@ -665,6 +665,114 @@ def pid_alive(pid: int) -> bool:
     return True
 
 
+class Harness:
+    """Session liveness for one coding-agent harness.
+
+    Participants ping ``alive()`` about once per second and leave the group as soon as it returns
+    False. The generic harness only follows the owner process; subclasses add the harness's own
+    notion of an active session. To support a new harness, subclass, implement ``detect``,
+    ``session_from_env``, and ``alive``, then register it in ``HARNESSES``.
+    """
+
+    name = "generic"
+
+    def __init__(self, owner_pid: int | None = None, session_id: str | None = None) -> None:
+        self.owner_pid = owner_pid
+        self.session_id = session_id
+
+    @classmethod
+    def detect(cls, env: dict[str, str]) -> bool:
+        """Return True when the current process runs inside this harness."""
+        return False
+
+    @classmethod
+    def session_from_env(cls, env: dict[str, str]) -> str | None:
+        return None
+
+    def alive(self) -> bool:
+        return self.owner_pid is None or pid_alive(self.owner_pid)
+
+    def describe(self) -> dict[str, Any]:
+        return {"harness": self.name, "owner_pid": self.owner_pid, "session_id": self.session_id}
+
+
+class CopilotHarness(Harness):
+    """GitHub Copilot (CLI, VS Code agent host).
+
+    The runtime keeps ``$COPILOT_HOME/session-state/<id>/inuse.<runtime-pid>.lock`` while the
+    session is open and removes it when the session is closed or archived, even if the runtime
+    process keeps serving other sessions.
+    """
+
+    name = "copilot"
+
+    def __init__(self, owner_pid: int | None = None, session_id: str | None = None) -> None:
+        super().__init__(owner_pid, session_id)
+        home = Path(os.environ.get("COPILOT_HOME") or Path.home() / ".copilot")
+        self.session_dir = home / "session-state" / session_id if session_id else None
+
+    @classmethod
+    def detect(cls, env: dict[str, str]) -> bool:
+        return bool(env.get("COPILOT_AGENT_SESSION_ID"))
+
+    @classmethod
+    def session_from_env(cls, env: dict[str, str]) -> str | None:
+        return env.get("COPILOT_AGENT_SESSION_ID") or None
+
+    def alive(self) -> bool:
+        if not super().alive():
+            return False
+        if self.session_dir is None:
+            return True
+        for lock in self.session_dir.glob("inuse.*.lock"):
+            pid = lock.name.split(".")[1]
+            if pid.isdigit() and pid_alive(int(pid)):
+                return True
+        return False
+
+
+class ClaudeCodeHarness(Harness):
+    """Claude Code. Only owner-process liveness is implemented.
+
+    Claude Code sets ``CLAUDECODE=1`` for the commands it runs and exposes ``SessionStart`` and
+    ``SessionEnd`` hooks (with ``session_id`` on stdin). A fuller integration can join from
+    ``SessionStart`` and mark the session ended from ``SessionEnd``.
+    """
+
+    name = "claude-code"
+
+    @classmethod
+    def detect(cls, env: dict[str, str]) -> bool:
+        return env.get("CLAUDECODE") == "1"
+
+
+class OmpHarness(Harness):
+    """oh-my-pi (omp). Not detected automatically; only owner-process liveness is implemented.
+
+    omp loads TypeScript extensions from ``.omp/extensions`` whose ``session_start`` and
+    ``session_shutdown`` events, with ``ctx.cwd`` and ``ctx.sessionManager``, can join the group
+    and end the session.
+    """
+
+    name = "omp"
+
+
+HARNESSES: dict[str, type[Harness]] = {
+    harness.name: harness for harness in (CopilotHarness, ClaudeCodeHarness, OmpHarness, Harness)
+}
+
+
+def resolve_harness(
+    name: str, owner_pid: int | None, session_id: str | None, env: dict[str, str] | None = None
+) -> Harness:
+    env = dict(os.environ if env is None else env)
+    if name == "auto":
+        kind = next((h for h in HARNESSES.values() if h.detect(env)), Harness)
+    else:
+        kind = HARNESSES[name]
+    return kind(owner_pid, session_id or kind.session_from_env(env))
+
+
 def read_control(state_dir: Path) -> dict[str, Any]:
     try:
         data = read_json(state_dir / "control.json")
