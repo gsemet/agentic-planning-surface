@@ -606,26 +606,104 @@ def run_once(root: Path, state_dir: Path, *, local_only: bool = False) -> int:
         return 1
 
 
-def watch(root: Path, state_dir: Path, *, local_only: bool = False) -> int:
+FOLLOWER_POLL_SECONDS = float(os.environ.get("AI_AUTOSYNC_FOLLOWER_POLL", "1.0"))
+
+
+def pid_alive(pid: int) -> bool:
+    """Check a process without signalling it (os.kill would terminate it on Windows)."""
+    if pid <= 0:
+        return False
+    if os.name == "nt":
+        import ctypes
+
+        kernel32 = ctypes.windll.kernel32
+        handle = kernel32.OpenProcess(0x1000, False, pid)
+        if not handle:
+            return False
+        try:
+            code = ctypes.c_ulong()
+            if not kernel32.GetExitCodeProcess(handle, ctypes.byref(code)):
+                return False
+            return code.value == 259
+        finally:
+            kernel32.CloseHandle(handle)
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    except OSError:
+        return False
+    return True
+
+
+def read_control(state_dir: Path) -> dict[str, Any]:
+    try:
+        data = read_json(state_dir / "control.json")
+    except SyncError:
+        data = {}
+    return {
+        **data,
+        "enabled": data.get("enabled", True) is not False,
+        "local_only": data.get("local_only") is True,
+    }
+
+
+def set_control(
+    state_dir: Path, *, enabled: bool, reason: str, local_only: bool | None = None
+) -> dict[str, Any]:
+    current = read_control(state_dir)
+    record = {
+        "enabled": enabled,
+        "local_only": current["local_only"] if local_only is None else local_only,
+        "reason": reason,
+        "updated_at": time.time(),
+        "updated_by_pid": os.getpid(),
+    }
+    write_json(state_dir / "control.json", record)
+    return record
+
+
+def participants(state_dir: Path) -> list[dict[str, Any]]:
+    """Return live participants and remove records left by crashed processes."""
+    found = []
+    for path in sorted((state_dir / "participants").glob("*.json")):
+        try:
+            data = read_json(path)
+        except SyncError:
+            continue
+        pid = data.get("pid")
+        if not isinstance(pid, int) or not pid_alive(pid):
+            path.unlink(missing_ok=True)
+            continue
+        found.append(data)
+    return found
+
+
+def lead(
+    root: Path, state_dir: Path, stop: threading.Event, keep_running: Any
+) -> int:
+    """Synchronize while this process holds the checkout lock and autosync stays enabled."""
     quiet, maximum, poll = config(root)
     changes = Changes(root)
     observer = Observer()
     observer.schedule(changes, str(root), recursive=True)
-    stop = threading.Event()
-
-    def request_stop(_signum: int, _frame: Any) -> None:
-        stop.set()
-        changes.event.set()
-
-    signal.signal(signal.SIGTERM, request_stop)
-    signal.signal(signal.SIGINT, request_stop)
     watcher_path = state_dir / "watcher.json"
     observer.start()
     next_poll = 0.0
     backoff = 5.0
+    local_only = read_control(state_dir)["local_only"]
     try:
         write_json(watcher_path, {"pid": os.getpid(), "local_only": local_only})
-        while not stop.is_set():
+        while keep_running():
+            control = read_control(state_dir)
+            if not control["enabled"]:
+                break
+            if control["local_only"] != local_only:
+                local_only = control["local_only"]
+                write_json(watcher_path, {"pid": os.getpid(), "local_only": local_only})
+                next_poll = 0.0
             now = time.monotonic()
             requested = state_dir / "sync-request.json"
             if now >= next_poll or changes.due(quiet, maximum) or requested.exists():
@@ -642,44 +720,120 @@ def watch(root: Path, state_dir: Path, *, local_only: bool = False) -> int:
                     backoff = 5.0
             changes.event.wait(timeout=1.0)
             changes.event.clear()
-        return run_once(root, state_dir, local_only=local_only)
+        # Final cycle before handing over, stopping, or losing the owning session.
+        return run_once(root, state_dir, local_only=read_control(state_dir)["local_only"])
     finally:
         observer.stop()
         observer.join()
         watcher_path.unlink(missing_ok=True)
 
 
+def participate(root: Path, state_dir: Path, owner_pid: int | None) -> int:
+    """Join the participant group: lead while holding the lock, otherwise stand by."""
+    stop = threading.Event()
+
+    def request_stop(_signum: int, _frame: Any) -> None:
+        stop.set()
+
+    for name in ("SIGTERM", "SIGINT", "SIGHUP"):
+        number = getattr(signal, name, None)
+        if number is not None:
+            signal.signal(number, request_stop)
+
+    def keep_running() -> bool:
+        return not stop.is_set() and (owner_pid is None or pid_alive(owner_pid))
+
+    record = state_dir / "participants" / f"{os.getpid()}.json"
+    lock = FileLock(str(state_dir / "sync.lock"))
+    role: str | None = None
+
+    def announce(new_role: str) -> None:
+        nonlocal role
+        write_json(record, {
+            "pid": os.getpid(), "owner_pid": owner_pid, "role": new_role, "since": time.time(),
+        })
+        if new_role != role:
+            print(f"[participant] pid {os.getpid()} is now {new_role}.", flush=True)
+        role = new_role
+
+    try:
+        while keep_running():
+            if not read_control(state_dir)["enabled"]:
+                if role != "idle":
+                    announce("idle")
+                stop.wait(FOLLOWER_POLL_SECONDS)
+                continue
+            try:
+                lock.acquire(timeout=0)
+            except Timeout:
+                if role != "follower":
+                    announce("follower")
+                stop.wait(FOLLOWER_POLL_SECONDS)
+                continue
+            try:
+                announce("leader")
+                result = lead(root, state_dir, stop, keep_running)
+            finally:
+                lock.release()
+            if result == 1:
+                current = read_json(state_dir / "status.json")
+                set_control(
+                    state_dir, enabled=False,
+                    reason=f"blocked: {current.get('message', 'intervention required')}",
+                )
+            announce("idle" if not read_control(state_dir)["enabled"] else "follower")
+        return 0
+    finally:
+        record.unlink(missing_ok=True)
+        if keep_running() is False and not stop.is_set():
+            print(f"[participant] owner process {owner_pid} ended; leaving.", flush=True)
+
+
 def request_sync(state_dir: Path, *, local_only_requested: bool = False) -> None:
     watcher = read_json(state_dir / "watcher.json")
     pid = watcher.get("pid")
     if not isinstance(pid, int) or pid <= 0:
-        raise SyncError("Another Git sync is in progress; no running watcher accepted the request")
+        raise SyncError("Another Git sync is in progress; no running leader accepted the request")
     if local_only_requested and watcher.get("local_only") is not True:
-        raise SyncError("The running watcher can publish; refusing a local-only sync request")
-    try:
-        os.kill(pid, 0)
-    except ProcessLookupError as exc:
-        raise SyncError("The recorded watcher is no longer running") from exc
-    except PermissionError as exc:
-        raise SyncError("Cannot verify the recorded watcher process") from exc
-    except OSError as exc:
-        raise SyncError(f"Cannot verify the recorded watcher process: {exc}") from exc
+        raise SyncError("The running leader can publish; refusing a local-only sync request")
+    if not pid_alive(pid):
+        raise SyncError("The recorded leader is no longer running")
     write_json(state_dir / "sync-request.json", {"requested_at": time.time()})
     mode = "local-only" if watcher.get("local_only") is True else "remote"
-    print(f"Synchronization requested from the running watcher ({mode} mode).")
+    print(f"Synchronization requested from the running leader ({mode} mode).")
+
+
+def describe(state_dir: Path) -> dict[str, Any]:
+    leader = read_json(state_dir / "watcher.json")
+    leader_pid = leader.get("pid") if isinstance(leader.get("pid"), int) else None
+    return {
+        "status": read_json(state_dir / "status.json"),
+        "control": read_control(state_dir),
+        "leader_pid": leader_pid if leader_pid and pid_alive(leader_pid) else None,
+        "participants": participants(state_dir),
+    }
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     subparsers = parser.add_subparsers(dest="action", required=True)
-    for action in ("init", "start", "sync", "status"):
+    for action in ("init", "start", "stop", "sync", "status"):
         subparser = subparsers.add_parser(action)
         subparser.add_argument("path", nargs="?", type=Path, default=Path("."))
         if action in ("start", "sync"):
             subparser.add_argument(
                 "--local-only", action="store_true",
                 help="commit locally without fetching, scanning, or publishing",
+            )
+        if action == "start":
+            subparser.add_argument(
+                "--owner-pid", type=int, default=None,
+                help="leave the group when this process (the agent host) exits",
+            )
+            subparser.add_argument(
+                "--enable-only", action="store_true",
+                help="enable autosync for all participants without joining",
             )
     approval = subparsers.add_parser("approve")
     approval.add_argument("path", type=Path)
@@ -692,25 +846,34 @@ def main() -> int:
             initialize(root)
             return 0
         if args.action == "status":
-            print(json.dumps(read_json(state_dir / "status.json"), indent=2))
+            print(json.dumps(describe(state_dir), indent=2))
             return 0
         if args.action == "approve":
             approve(state_dir, args.incident)
             return 0
-        with FileLock(str(state_dir / "sync.lock"), timeout=0):
-            if args.action == "sync":
-                return run_once(root, state_dir, local_only=args.local_only)
-            return watch(root, state_dir, local_only=args.local_only)
-    except Timeout:
-        if args.action == "sync":
-            try:
-                request_sync(state_dir, local_only_requested=args.local_only)
+        if args.action == "stop":
+            set_control(state_dir, enabled=False, reason="stopped by user")
+            count = len(participants(state_dir))
+            print(f"Autosync stopped for all sessions; {count} participant(s) now idle.")
+            return 0
+        if args.action == "start":
+            if args.owner_pid is not None and not pid_alive(args.owner_pid):
+                raise SyncError(f"Owner process {args.owner_pid} is not running")
+            set_control(state_dir, enabled=True, local_only=args.local_only, reason="started by user")
+            mode = "local-only" if args.local_only else "remote"
+            print(f"Autosync enabled for all sessions ({mode} mode).", flush=True)
+            if args.enable_only:
                 return 0
-            except SyncError as exc:
-                print(str(exc), file=sys.stderr)
-                return 1
-        print("Another autosync process owns this checkout.", file=sys.stderr)
-        return 1
+            return participate(root, state_dir, args.owner_pid)
+        with FileLock(str(state_dir / "sync.lock"), timeout=0):
+            return run_once(root, state_dir, local_only=args.local_only)
+    except Timeout:
+        try:
+            request_sync(state_dir, local_only_requested=args.local_only)
+            return 0
+        except SyncError as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
     except (SyncError, OSError) as exc:
         print(str(exc), file=sys.stderr)
         return 1
