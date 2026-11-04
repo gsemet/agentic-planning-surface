@@ -53,7 +53,13 @@ GUIDELINES = """\
 Run commands from the repository root. Every agent session that works in this checkout joins one
 autosync group. Group members coordinate through `.git/ai-autosync/`: a kernel file lock elects a
 single leader that watches and synchronizes; the others are followers that take over within about
-a second when the leader exits. Members leave the group when their owner process ends.
+a second when the leader exits.
+
+Each participant pings its coding-agent harness about once per second and exits as soon as its
+session is no longer active. The harness is detected from the environment (`--harness auto`):
+GitHub Copilot sessions are followed through their session-state `inuse` lock, so closing or
+archiving the chat ends the participant; Claude Code and other harnesses currently fall back to the
+owner process. Pass `--harness` and `--session-id` explicitly when detection is not possible.
 
 ## Joining the group
 
