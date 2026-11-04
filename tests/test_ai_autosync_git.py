@@ -312,7 +312,9 @@ class ParticipantGroupTests(unittest.TestCase):
         subprocess.run(["git", "-C", str(self.root), "add", "."], check=True)
         subprocess.run(["git", "-C", str(self.root), "commit", "-qm", "initial"], check=True)
         _, self.state = autosync.repository(self.root)
-        self.env = {**os.environ, "AI_AUTOSYNC_FOLLOWER_POLL": "0.2"}
+        self.env = {key: value for key, value in os.environ.items()
+                    if key not in ("COPILOT_AGENT_SESSION_ID", "CLAUDECODE")}
+        self.env["AI_AUTOSYNC_FOLLOWER_POLL"] = "0.2"
         self.processes = []
 
     def tearDown(self):
@@ -402,6 +404,48 @@ class ParticipantGroupTests(unittest.TestCase):
         self.wait_for(lambda: self.roles() == {first.pid: "idle", second.pid: "idle"})
         self.assertEqual(autosync.read_json(self.state / "status.json")["state"], "approval_required")
 
+
+    def test_participant_leaves_when_its_copilot_session_closes(self):
+        home = Path(self.tmp.name) / "copilot-home"
+        session = home / "session-state" / "session-1"
+        session.mkdir(parents=True)
+        runtime = self.owner()
+        in_use = session / f"inuse.{runtime.pid}.lock"
+        in_use.write_text(str(runtime.pid), encoding="utf-8")
+        self.env.update(COPILOT_HOME=str(home), COPILOT_AGENT_SESSION_ID="session-1")
+        member = self.spawn("start", str(self.root), "--local-only")
+        self.wait_for(lambda: self.roles().get(member.pid) == "leader")
+        record = autosync.participants(self.state)[0]
+        self.assertEqual((record["harness"], record["session_id"]), ("copilot", "session-1"))
+        in_use.unlink()
+        self.assertEqual(member.wait(timeout=20), 0)
+        self.assertEqual(runtime.poll(), None)
+
+
+class HarnessTests(unittest.TestCase):
+    def test_auto_detection_picks_the_running_harness(self):
+        cases = {
+            "copilot": {"COPILOT_AGENT_SESSION_ID": "abc"},
+            "claude-code": {"CLAUDECODE": "1"},
+            "generic": {},
+        }
+        for name, env in cases.items():
+            harness = autosync.resolve_harness("auto", None, None, env)
+            self.assertEqual(harness.name, name)
+        self.assertEqual(autosync.resolve_harness("auto", None, None, cases["copilot"]).session_id, "abc")
+        self.assertEqual(autosync.resolve_harness("omp", 1, "s", {}).describe(),
+                         {"harness": "omp", "owner_pid": 1, "session_id": "s"})
+
+    def test_copilot_session_requires_a_live_in_use_lock(self):
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.dict(os.environ, {"COPILOT_HOME": tmp}):
+            session = Path(tmp) / "session-state" / "s1"
+            session.mkdir(parents=True)
+            harness = autosync.CopilotHarness(None, "s1")
+            self.assertFalse(harness.alive())
+            (session / "inuse.999999999.lock").write_text("", encoding="utf-8")
+            self.assertFalse(harness.alive())
+            (session / f"inuse.{os.getpid()}.lock").write_text("", encoding="utf-8")
+            self.assertTrue(harness.alive())
 
 if __name__ == "__main__":
     unittest.main()
