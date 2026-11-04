@@ -3,7 +3,7 @@ A project dedicated to only planning for my opensource agentic projects
 
 ## Git autosync
 
-The session-bound watcher uses Git, Git LFS, Gitleaks, and `uv`:
+The watcher uses Git, Git LFS, Gitleaks, and `uv`:
 
 ```bash
 uv run scripts/ai-autosync-git.py start .
@@ -11,7 +11,9 @@ uv run scripts/ai-autosync-git.py sync .
 uv run scripts/ai-autosync-git.py status .
 ```
 
-Run `start` in the agent host's background-process facility. `sync` requests an immediate
+Run `start` as a detached background process so it outlives the agent session; only one watcher
+can own a checkout, and its PID is recorded in `.git/ai-autosync/watcher.json`. `sync` requests an
+immediate
 cycle from an existing watcher, or runs one when no watcher is active. Add `--local-only`
 to `start` or `sync` to create local commits without fetching or publishing.
 

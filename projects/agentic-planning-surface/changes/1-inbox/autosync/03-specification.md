@@ -1,8 +1,7 @@
 # Agent-aware Git autosync: change specification
 
-**Status:** Implementation requested; this specification remains the target. The current watcher
-requires agent intervention for incoming changes and the active session is running in local-only
-mode.  
+**Status:** Partially implemented; this specification remains the target. See
+[Implementation status](#implementation-status) for what is built and where it deviates.  
 **Source:** [Intent](./01-intent.md) and [interview responses](./02-interview-responses.md).
 
 ## Intent
@@ -83,6 +82,47 @@ proven guarantee.
   synchronization; safe local commits and fetching may continue, but withhold affected pushes until
   required LFS content is available.
 - Do not report a partially synchronized repository as fully synchronized.
+
+## Implementation status
+
+The first implementation is
+[`scripts/ai-autosync-git.py`](../../../../../scripts/ai-autosync-git.py), a single-file CLI run
+with `uv run` (PEP 723 metadata, `watchdog` and `filelock`). Agent guidance lives in
+[autosync.guidelines.md](../../../../../.agents/guidelines/autosync.guidelines.md), which `init`
+also embeds.
+
+Implemented:
+
+- `init`, `start`, `sync`, `status`, and `approve` commands; `sync` asks a running watcher for an
+  immediate cycle instead of competing with it.
+- One watcher per checkout, enforced by a lock under the Git directory; its PID is recorded in
+  `.git/ai-autosync/watcher.json`. Stopping it with `SIGTERM` runs a final cycle.
+- Quiet period of 10 seconds, maximum interval of 30 seconds, and 30-second polling, configured in
+  `.agents/autosync.toml`.
+- Commits through a private index while holding Git's index lock, preserving the user's staging
+  state. Existing staged changes and detected secrets require an incident-specific approval.
+- Gitleaks scans the pending push range and the local LFS object cache before publishing. Git LFS
+  objects are pushed before Git refs, and the Git push is withheld if the LFS upload fails.
+- Any `.gitattributes` change triggers `git add --renormalize .`, moving existing files into or out
+  of Git LFS and normalizing line endings in a new commit without rewriting history. The watcher
+  stops before committing if LFS attributes exist but the LFS filters are not configured.
+- The root `.gitattributes` is imported from the shared GPC boilerplate: text is normalized to LF,
+  and common binary formats are stored in Git LFS.
+- No force-push, and Git hooks are never bypassed.
+
+Deviations from this specification:
+
+- **Lifecycle:** the watcher is a detached process that outlives agent sessions. A process
+  attached to an agent's shell stopped when the shell ended. Agent registration and stopping when
+  the last session ends are not implemented; the watcher runs until it is killed or needs
+  intervention.
+- **Remote integration:** incoming upstream commits are not rebased automatically. The watcher stops
+  and hands integration to an agent, because rewriting the checkout while other processes edit it
+  could lose work.
+- **Invocation:** run through `uv run scripts/ai-autosync-git.py`, not a `uvx` package.
+- **Mode in use:** the planning-surface watcher currently runs with `--local-only`, so it commits
+  locally but does not fetch, scan, or publish.
+- **Platforms:** tested on macOS only; Windows is untested.
 
 ## Open-source landscape
 
