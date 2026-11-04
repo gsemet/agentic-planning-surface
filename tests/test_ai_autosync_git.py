@@ -3,7 +3,9 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -292,6 +294,113 @@ class AutosyncTests(unittest.TestCase):
         autosync.initialize(self.root)
         self.assertEqual(guidance.read_text(), "Custom guidance\n")
         self.assertEqual((self.root / "AGENTS.md").read_text().count("## Git autosync"), 1)
+
+
+@unittest.skipUnless(shutil.which("git"), "git is required")
+class ParticipantGroupTests(unittest.TestCase):
+    """Real processes: one leader per checkout, failover, and broadcast orders."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name) / "checkout"
+        subprocess.run(["git", "init", "-q", "-b", "main", str(self.root)], check=True)
+        for key, value in (("user.email", "test@example.invalid"), ("user.name", "Test"),
+                           ("core.autocrlf", "false")):
+            subprocess.run(["git", "-C", str(self.root), "config", key, value], check=True)
+        (self.root / "notes.txt").write_text("initial\n", encoding="utf-8")
+        subprocess.run(["git", "-C", str(self.root), "add", "."], check=True)
+        subprocess.run(["git", "-C", str(self.root), "commit", "-qm", "initial"], check=True)
+        _, self.state = autosync.repository(self.root)
+        self.env = {**os.environ, "AI_AUTOSYNC_FOLLOWER_POLL": "0.2"}
+        self.processes = []
+
+    def tearDown(self):
+        for process in self.processes:
+            if process.poll() is None:
+                process.terminate()
+                try:
+                    process.wait(timeout=15)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait()
+
+    def spawn(self, *args):
+        process = subprocess.Popen(
+            [sys.executable, str(SCRIPT), *args], env=self.env,
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+        self.processes.append(process)
+        return process
+
+    def owner(self):
+        return self.spawn_raw([sys.executable, "-c", "import time; time.sleep(120)"])
+
+    def spawn_raw(self, argv):
+        process = subprocess.Popen(argv)
+        self.processes.append(process)
+        return process
+
+    def wait_for(self, predicate, timeout=20.0):
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            if predicate():
+                return
+            time.sleep(0.1)
+        self.fail(f"condition not met; state: {autosync.describe(self.state)}")
+
+    def roles(self):
+        return {item["pid"]: item["role"] for item in autosync.participants(self.state)}
+
+    def test_single_leader_and_failover_when_a_session_ends(self):
+        owner_a, owner_b = self.owner(), self.owner()
+        first = self.spawn("start", str(self.root), "--local-only", "--owner-pid", str(owner_a.pid))
+        self.wait_for(lambda: self.roles().get(first.pid) == "leader")
+        second = self.spawn("join", str(self.root), "--owner-pid", str(owner_b.pid))
+        self.wait_for(lambda: self.roles().get(second.pid) == "follower")
+        self.assertEqual(sorted(self.roles().values()), ["follower", "leader"])
+
+        owner_a.kill()
+        owner_a.wait()
+        first.wait(timeout=20)
+        self.wait_for(lambda: self.roles() == {second.pid: "leader"})
+        (self.root / "notes.txt").write_text("after failover\n", encoding="utf-8")
+        self.wait_for(lambda: subprocess.run(
+            ["git", "-C", str(self.root), "show", "HEAD:notes.txt"],
+            capture_output=True, text=True,
+        ).stdout == "after failover\n")
+
+    def test_stop_and_start_orders_reach_every_participant(self):
+        owner = self.owner()
+        first = self.spawn("start", str(self.root), "--local-only", "--owner-pid", str(owner.pid))
+        second = self.spawn("join", str(self.root), "--owner-pid", str(owner.pid))
+        self.wait_for(lambda: sorted(self.roles().values()) == ["follower", "leader"])
+
+        subprocess.run([sys.executable, str(SCRIPT), "stop", str(self.root)], env=self.env, check=True,
+                       stdout=subprocess.DEVNULL)
+        self.wait_for(lambda: self.roles() == {first.pid: "idle", second.pid: "idle"})
+        self.assertIsNone(autosync.describe(self.state)["leader_pid"])
+        (self.root / "notes.txt").write_text("while stopped\n", encoding="utf-8")
+        time.sleep(1.5)
+        self.assertEqual(subprocess.run(
+            ["git", "-C", str(self.root), "show", "HEAD:notes.txt"], capture_output=True, text=True,
+        ).stdout, "initial\n")
+
+        subprocess.run([sys.executable, str(SCRIPT), "start", str(self.root), "--local-only",
+                        "--enable-only"], env=self.env, check=True, stdout=subprocess.DEVNULL)
+        self.wait_for(lambda: sorted(self.roles().values()) == ["follower", "leader"])
+        self.assertTrue(all(process.poll() is None for process in (first, second)))
+
+    def test_blocking_incident_pauses_the_whole_group(self):
+        owner = self.owner()
+        (self.root / "notes.txt").write_text("staged\n", encoding="utf-8")
+        subprocess.run(["git", "-C", str(self.root), "add", "notes.txt"], check=True)
+        first = self.spawn("start", str(self.root), "--local-only", "--owner-pid", str(owner.pid))
+        second = self.spawn("join", str(self.root), "--owner-pid", str(owner.pid))
+        self.wait_for(lambda: not autosync.read_control(self.state)["enabled"])
+        self.assertTrue(autosync.read_control(self.state)["reason"].startswith("blocked:"))
+        self.wait_for(lambda: self.roles() == {first.pid: "idle", second.pid: "idle"})
+        self.assertEqual(autosync.read_json(self.state / "status.json")["state"], "approval_required")
 
 
 if __name__ == "__main__":
