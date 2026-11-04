@@ -29,6 +29,9 @@ from filelock import FileLock, Timeout
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
+__version__ = "1.0.0"
+COMMIT_SUBJECT = "chore: autosync repository changes"
+COMMIT_TRAILER = f"Authored-By: Ai-Autosync-git {__version__}"
 
 DEFAULT_CONFIG = """\
 # Timing values are in seconds.
@@ -393,10 +396,7 @@ def create_commit(root: Path, state_dir: Path) -> bool:
             return False
         if diff.returncode != 1:
             raise SyncError(f"Cannot inspect prepared changes: {diff.stderr.strip()}")
-        commit_args = ["commit", "-m", "chore: autosync repository changes"]
-        trailer = os.environ.get("AI_AUTOSYNC_COMMIT_TRAILER")
-        if trailer:
-            commit_args.extend(["-m", trailer])
+        commit_args = ["commit", "-m", COMMIT_SUBJECT, "-m", COMMIT_TRAILER]
         result = git(root, *commit_args, env=env, check=False)
         if result.returncode:
             raise SyncError(f"Automatic commit failed: {result.stderr.strip() or result.stdout.strip()}")
@@ -671,6 +671,7 @@ def request_sync(state_dir: Path, *, local_only_requested: bool = False) -> None
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     subparsers = parser.add_subparsers(dest="action", required=True)
     for action in ("init", "start", "sync", "status"):
         subparser = subparsers.add_parser(action)

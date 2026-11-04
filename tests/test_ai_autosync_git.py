@@ -69,6 +69,11 @@ class AutosyncTests(unittest.TestCase):
         self.assertEqual(local, remote)
         self.assertEqual(self.run_git(self.root, "status", "--porcelain").stdout, "")
         self.assertEqual(autosync.read_json(self.state / "status.json")["state"], "synced")
+        message = self.run_git(self.root, "log", "-1", "--format=%B").stdout
+        self.assertEqual(
+            message,
+            f"chore: autosync repository changes\n\nAuthored-By: Ai-Autosync-git {autosync.__version__}\n\n",
+        )
 
     def test_existing_staged_changes_need_explicit_approval(self):
         (self.root / "notes.txt").write_text("staged\n", encoding="utf-8")

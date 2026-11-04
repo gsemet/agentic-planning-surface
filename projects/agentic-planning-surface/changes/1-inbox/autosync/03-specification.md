@@ -109,6 +109,9 @@ Implemented:
 - The root `.gitattributes` is imported from the shared GPC boilerplate: text is normalized to LF,
   and common binary formats are stored in Git LFS.
 - No force-push, and Git hooks are never bypassed.
+- Automatic commits use the repository's Git identity and the message
+  `chore: autosync repository changes` followed by the trailer
+  `Authored-By: Ai-Autosync-git <version>`; `--version` prints the script version.
 
 Deviations from this specification:
 
@@ -120,8 +123,8 @@ Deviations from this specification:
   and hands integration to an agent, because rewriting the checkout while other processes edit it
   could lose work.
 - **Invocation:** run through `uv run scripts/ai-autosync-git.py`, not a `uvx` package.
-- **Mode in use:** the planning-surface watcher currently runs with `--local-only`, so it commits
-  locally but does not fetch, scan, or publish.
+- **Mode in use:** the planning-surface watcher runs in remote mode. With `--local-only`, it
+  commits locally but does not fetch, scan, or publish.
 - **Platforms:** tested on macOS only; Windows is untested.
 
 ## Open-source landscape
