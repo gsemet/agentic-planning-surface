@@ -1,6 +1,8 @@
 # Agent-aware Git autosync: change specification
 
-**Status:** Interview handoff; not approved for implementation.  
+**Status:** Implementation requested; this specification remains the target. The current watcher
+requires agent intervention for incoming changes and the active session is running in local-only
+mode.  
 **Source:** [Intent](./01-intent.md) and [interview responses](./02-interview-responses.md).
 
 ## Intent
