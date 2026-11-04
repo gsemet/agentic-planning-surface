@@ -863,7 +863,7 @@ def lead(
         watcher_path.unlink(missing_ok=True)
 
 
-def participate(root: Path, state_dir: Path, owner_pid: int | None) -> int:
+def participate(root: Path, state_dir: Path, harness: Harness) -> int:
     """Join the participant group: lead while holding the lock, otherwise stand by."""
     stop = threading.Event()
 
@@ -876,7 +876,7 @@ def participate(root: Path, state_dir: Path, owner_pid: int | None) -> int:
             signal.signal(number, request_stop)
 
     def keep_running() -> bool:
-        return not stop.is_set() and (owner_pid is None or pid_alive(owner_pid))
+        return not stop.is_set() and harness.alive()
 
     record = state_dir / "participants" / f"{os.getpid()}.json"
     lock = FileLock(str(state_dir / "sync.lock"))
@@ -885,7 +885,7 @@ def participate(root: Path, state_dir: Path, owner_pid: int | None) -> int:
     def announce(new_role: str) -> None:
         nonlocal role
         write_json(record, {
-            "pid": os.getpid(), "owner_pid": owner_pid, "role": new_role, "since": time.time(),
+            "pid": os.getpid(), **harness.describe(), "role": new_role, "since": time.time(),
         })
         if new_role != role:
             print(f"[participant] pid {os.getpid()} is now {new_role}.", flush=True)
@@ -920,8 +920,8 @@ def participate(root: Path, state_dir: Path, owner_pid: int | None) -> int:
         return 0
     finally:
         record.unlink(missing_ok=True)
-        if owner_pid is not None and not pid_alive(owner_pid):
-            print(f"[participant] owner process {owner_pid} ended; leaving.", flush=True)
+        if not stop.is_set() and not harness.alive():
+            print(f"[participant] {harness.name} session ended; leaving.", flush=True)
 
 
 def request_sync(state_dir: Path, *, local_only_requested: bool = False) -> None:
@@ -966,6 +966,14 @@ def main() -> int:
                 "--owner-pid", type=int, default=None,
                 help="leave the group when this process (the agent host) exits",
             )
+            subparser.add_argument(
+                "--harness", choices=["auto", *HARNESSES], default="auto",
+                help="coding-agent harness whose session liveness is pinged (default: detect)",
+            )
+            subparser.add_argument(
+                "--session-id", default=None,
+                help="harness session to follow (default: read from the harness environment)",
+            )
         if action == "start":
             subparser.add_argument(
                 "--enable-only", action="store_true",
@@ -993,20 +1001,21 @@ def main() -> int:
             print(f"Autosync stopped for all sessions; {count} participant(s) now idle.")
             return 0
         if args.action in ("start", "join"):
-            if args.owner_pid is not None and not pid_alive(args.owner_pid):
-                raise SyncError(f"Owner process {args.owner_pid} is not running")
+            harness = resolve_harness(args.harness, args.owner_pid, args.session_id)
+            if not harness.alive():
+                raise SyncError(f"No active {harness.name} session: {harness.describe()}")
         if args.action == "join":
             control = read_control(state_dir)
             state = "enabled" if control["enabled"] else f"stopped ({control.get('reason', 'stopped')})"
             print(f"Joining the autosync group; autosync is currently {state}.", flush=True)
-            return participate(root, state_dir, args.owner_pid)
+            return participate(root, state_dir, harness)
         if args.action == "start":
             set_control(state_dir, enabled=True, local_only=args.local_only, reason="started by user")
             mode = "local-only" if args.local_only else "remote"
             print(f"Autosync enabled for all sessions ({mode} mode).", flush=True)
             if args.enable_only:
                 return 0
-            return participate(root, state_dir, args.owner_pid)
+            return participate(root, state_dir, harness)
         with FileLock(str(state_dir / "sync.lock"), timeout=0):
             return run_once(root, state_dir, local_only=args.local_only)
     except Timeout:
