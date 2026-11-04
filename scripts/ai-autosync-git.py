@@ -785,7 +785,7 @@ def participate(root: Path, state_dir: Path, owner_pid: int | None) -> int:
         return 0
     finally:
         record.unlink(missing_ok=True)
-        if keep_running() is False and not stop.is_set():
+        if owner_pid is not None and not pid_alive(owner_pid):
             print(f"[participant] owner process {owner_pid} ended; leaving.", flush=True)
 
 
