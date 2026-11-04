@@ -2,5 +2,4 @@
 
 ## Git autosync
 
-Follow the [autosync guidelines](.agents/guidelines/autosync.guidelines.md) when working in
-this repository.
+This project has strong rules for file synchronization. You HAVE to follow the [autosync guidelines](.agents/guidelines/autosync.guidelines.md) when you have this project in your environment.
