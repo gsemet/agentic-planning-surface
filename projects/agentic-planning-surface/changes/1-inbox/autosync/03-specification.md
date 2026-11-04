@@ -123,10 +123,14 @@ Implemented:
 
 Deviations from this specification:
 
-- **Lifecycle:** participants are detached processes bound to the agent host PID rather than to a
-  chat. In VS Code, several chats can share one `copilot-runtime` host, so closing a single chat
-  may not end its participant; it ends when the host (window or application) exits. Autosync
-  stops only on an explicit `stop` or a blocking incident, not when the last session ends.
+- **Lifecycle:** participants are detached processes that ping their harness about once per second
+  through a pluggable `Harness` class (`--harness auto|copilot|claude-code|omp|generic`) and exit
+  when the session is no longer active. Copilot is implemented through the session-state
+  `inuse.<runtime-pid>.lock` file, which disappears when the chat is closed or archived even though
+  the shared `copilot-runtime` keeps running. Claude Code (`SessionStart`/`SessionEnd` hooks) and
+  oh-my-pi (`session_start`/`session_shutdown` extension events in `.omp/extensions`) are
+  placeholders that only follow `--owner-pid`. Autosync stops only on an explicit `stop` or a
+  blocking incident, not when the last session ends.
 - **Remote integration:** incoming upstream commits are not rebased automatically. The watcher stops
   and hands integration to an agent, because rewriting the checkout while other processes edit it
   could lose work.
