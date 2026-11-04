@@ -1,0 +1,2 @@
+main dd375646, 1-h TTL: no ticks $222.68; keep-warm /loop tick every 59.5 min while idle $180.37; delta -42.31
+gaps >1h: 33 median h 1.5 max h 10.6 sum h 96.5

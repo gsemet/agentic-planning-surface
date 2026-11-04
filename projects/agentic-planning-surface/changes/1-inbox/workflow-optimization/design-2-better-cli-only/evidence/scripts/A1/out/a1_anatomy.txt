@@ -1,0 +1,139 @@
+(small-input pooled ratio 2.03 is biased by untracked per-turn reminders; CPT=2.4 from a1_calib.py is used)
+
+## A. Anatomy per role (window)
+| Role | Agents | Turns | Turns/agent med (max) | Model $ | Cost | read | 5m w | 1h w | out | ctx med | p90 | max | 1st-turn ctx med | ctx growth/turn med | compactions | rebuilds (<5m/5-15/15-60/>1h) | rebuild write $ |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Foreman (orchestrator) | 31 | 1189 | 17 (285) | sonnet 102/opus 14 | $116.06 | 39.8 | 66.5 | 0.0 | 9.8 | 129k | 410k | 494k | 33k | 2.28k | 0 | 0/58/42/15 | $58.05 |
+| Driver (CR) | 95 | 2026 | 13 (96) | opus 44/sonnet 40 | $84.22 | 23.6 | 51.5 | 0.0 | 9.2 | 58k | 93k | 211k | 34k | 1.78k | 0 | 0/82/45/6 | $35.74 |
+| Driver: stack | 5 | 620 | 70 (324) | sonnet 23 | $23.34 | 16.6 | 4.6 | 0.0 | 2.1 | 101k | 267k | 311k | 35k | 0.92k | 0 | 0/3/1/2 | $3.02 |
+| Driver: task | 25 | 273 | 11 (23) | sonnet 8 | $8.48 | 2.3 | 5.0 | 0.0 | 1.2 | 50k | 59k | 70k | 35k | 1.67k | 0 | 0/16/4/1 | $2.16 |
+| Driver: integrator | 5 | 88 | 15 (29) | sonnet 2 | $1.50 | 0.8 | 0.5 | 0.0 | 0.2 | 47k | 54k | 57k | 35k | 1.08k | 0 | 0/0/0/0 | $0.00 |
+| Main session dd375646 | 1 | 2391 | 2391 (2391) | opus 199 | $198.78 | 89.6 | 0.0 | 77.5 | 31.7 | 184k | 321k | 501k | 336k | 0.07k | 17 | 1/1/0/29 | $46.09 |
+| Foreman (orchestrator) @runs 1-5 | 4 | 156 | 35 (66) | sonnet 8/opus 8 | $15.89 | 2.2 | 11.5 | 0.0 | 2.2 | 96k | 136k | 151k | 34k | 2.09k | 0 | 0/4/22/6 | $10.21 |
+| Driver (CR) @runs 1-5 | 46 | 541 | 11 (30) | sonnet 17/opus 1 | $17.97 | 4.8 | 10.4 | 0.0 | 2.8 | 52k | 62k | 82k | 35k | 2.00k | 0 | 0/16/20/4 | $4.99 |
+| Driver: stack @runs 1-5 | 4 | 553 | 83 (324) | sonnet 22 | $22.04 | 15.5 | 4.4 | 0.0 | 2.1 | 109k | 272k | 311k | 35k | 0.90k | 0 | 0/3/1/2 | $3.02 |
+| Driver: task @runs 1-5 | 25 | 273 | 11 (23) | sonnet 8 | $8.48 | 2.3 | 5.0 | 0.0 | 1.2 | 50k | 59k | 70k | 35k | 1.67k | 0 | 0/16/4/1 | $2.16 |
+| Driver: integrator @runs 1-5 | 5 | 88 | 15 (29) | sonnet 2 | $1.50 | 0.8 | 0.5 | 0.0 | 0.2 | 47k | 54k | 57k | 35k | 1.08k | 0 | 0/0/0/0 | $0.00 |
+
+## B. Context composition: what the agent carries (tokens = chars/CPT; carry cost = write once + read on each later turn until compaction/end)
+
+### Foreman (orchestrator) (31 agents); total cache-read $ 39.82
+| Input class | Items | Mean tokens | Mean turns carried | Carry cost $ |
+|---|---|---|---|---|
+| hand-back report | 498 | 884 | 85 | 8.75 |
+| brief/skill read | 84 | 3047 | 57 | 3.46 |
+| file read | 151 | 1107 | 69 | 2.97 |
+| other shell output | 345 | 496 | 59 | 2.61 |
+| status read | 59 | 1761 | 45 | 1.29 |
+| child return (Agent result) | 450 | 143 | 85 | 1.26 |
+| git/gh status output | 88 | 652 | 75 | 0.93 |
+| task notification | 98 | 373 | 102 | 0.84 |
+| gate output | 84 | 307 | 102 | 0.48 |
+| git/gh write output | 62 | 445 | 80 | 0.39 |
+| steering message | 62 | 272 | 50 | 0.27 |
+| poll/wait output | 82 | 157 | 104 | 0.22 |
+| peer message | 31 | 295 | 116 | 0.21 |
+| other tool result | 28 | 158 | 24 | 0.16 |
+| system/other | 38 | 690 | 19 | 0.14 |
+| send ack | 91 | 67 | 84 | 0.12 |
+| (own output, read only) | – | – | – | 12.02 |
+
+### Driver (CR) (95 agents); total cache-read $ 23.58
+| Input class | Items | Mean tokens | Mean turns carried | Carry cost $ |
+|---|---|---|---|---|
+| brief/skill read | 268 | 3255 | 18 | 5.97 |
+| hand-back report | 223 | 929 | 21 | 1.68 |
+| git/gh status output | 357 | 578 | 21 | 1.56 |
+| file read | 171 | 1209 | 16 | 1.36 |
+| other shell output | 468 | 294 | 19 | 1.02 |
+| status read | 81 | 752 | 18 | 0.51 |
+| poll/wait output | 414 | 132 | 20 | 0.40 |
+| git/gh write output | 103 | 497 | 17 | 0.34 |
+| child return (Agent result) | 221 | 146 | 21 | 0.24 |
+| task notification | 98 | 227 | 28 | 0.19 |
+| gate output | 37 | 520 | 13 | 0.12 |
+| system/other | 16 | 390 | 11 | 0.03 |
+| steering message | 12 | 236 | 16 | 0.02 |
+| other tool result | 29 | 110 | 20 | 0.02 |
+| send ack | 4 | 59 | 24 | 0.00 |
+| (own output, read only) | – | – | – | 1.93 |
+
+### Driver: stack (5 agents); total cache-read $ 16.60
+| Input class | Items | Mean tokens | Mean turns carried | Carry cost $ |
+|---|---|---|---|---|
+| other shell output | 243 | 351 | 113 | 2.26 |
+| brief/skill read | 12 | 2974 | 112 | 0.98 |
+| git/gh status output | 88 | 417 | 94 | 0.91 |
+| file read | 61 | 442 | 146 | 0.89 |
+| hand-back report | 30 | 767 | 65 | 0.35 |
+| git/gh write output | 65 | 278 | 93 | 0.34 |
+| gate output | 25 | 509 | 80 | 0.24 |
+| status read | 21 | 336 | 97 | 0.19 |
+| poll/wait output | 72 | 163 | 73 | 0.15 |
+| task notification | 20 | 308 | 101 | 0.14 |
+| system/other | 6 | 736 | 76 | 0.08 |
+| child return (Agent result) | 30 | 146 | 65 | 0.07 |
+| other tool result | 9 | 305 | 72 | 0.04 |
+| peer message | 2 | 260 | 51 | 0.01 |
+| (own output, read only) | – | – | – | 4.97 |
+
+### Driver: task (25 agents); total cache-read $ 2.28
+| Input class | Items | Mean tokens | Mean turns carried | Carry cost $ |
+|---|---|---|---|---|
+| brief/skill read | 58 | 2821 | 8 | 0.69 |
+| hand-back report | 76 | 657 | 5 | 0.18 |
+| file read | 14 | 1400 | 8 | 0.09 |
+| status read | 25 | 496 | 5 | 0.05 |
+| child return (Agent result) | 76 | 146 | 5 | 0.04 |
+| other shell output | 57 | 172 | 4 | 0.04 |
+| git/gh status output | 20 | 239 | 4 | 0.02 |
+| poll/wait output | 7 | 244 | 9 | 0.01 |
+| system/other | 3 | 510 | 3 | 0.00 |
+| git/gh write output | 22 | 65 | 1 | 0.00 |
+| gate output | 3 | 189 | 2 | 0.00 |
+| other tool result | 4 | 31 | 6 | 0.00 |
+| (own output, read only) | – | – | – | 0.13 |
+
+### Main session dd375646 (1 agents); total cache-read $ 89.60
+| Input class | Items | Mean tokens | Mean turns carried | Carry cost $ |
+|---|---|---|---|---|
+| steering message | 403 | 1982 | 104 | 31.84 |
+| system/other | 260 | 1601 | 108 | 11.76 |
+| file read | 389 | 804 | 106 | 9.41 |
+| other shell output | 697 | 315 | 108 | 6.39 |
+| git/gh status output | 364 | 520 | 109 | 5.77 |
+| compaction summary | 34 | 3810 | 152 | 5.03 |
+| brief/skill read | 110 | 1337 | 105 | 4.32 |
+| status read | 151 | 778 | 122 | 3.79 |
+| task notification | 349 | 335 | 109 | 3.52 |
+| child return (Agent result) | 161 | 454 | 114 | 2.25 |
+| other tool result | 247 | 288 | 103 | 1.66 |
+| send ack | 208 | 101 | 115 | 0.67 |
+| git/gh write output | 80 | 376 | 87 | 0.64 |
+| hand-back report | 20 | 1071 | 124 | 0.64 |
+| gate output | 73 | 227 | 114 | 0.55 |
+| poll/wait output | 54 | 197 | 95 | 0.28 |
+| peer message | 5 | 487 | 117 | 0.07 |
+| (own output, read only) | – | – | – | 28.35 |
+
+## C. Per-agent top 12 orchestration agents (evidence)
+| Agent | Role | Description | Scope | Model | Turns | Cost | ctx med/max | 1st ctx | compactions | rebuilds |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `aa284441fb21ed442` | orchestrator | Orchestrator P1+P2 stacked PRs | pre-run-1 batches | sonnet | 285 | $40.03 | 264k/453k | 35k | 0 | 36 |
+| `a14fa7d64e7b029f2` | orchestrator | Orchestrator L: apply reduction in PR 62 | other workstreams | sonnet | 230 | $25.11 | 342k/494k | 34k | 0 | 11 |
+| `a3a9ea083fe2f3289` | driver | Driver CR 056 S1..S8 | other workstreams | opus | 96 | $20.39 | 131k/211k | 34k | 0 | 24 |
+| `a05ca1697b4543086` | stack driver | Stack driver 107-120 | runs 1-5 | sonnet | 324 | $16.90 | 198k/311k | 35k | 0 | 5 |
+| `a35435560038683fc` | orchestrator | Orchestrator K: requirements batch 3 | other workstreams | sonnet | 138 | $16.84 | 284k/417k | 34k | 0 | 13 |
+| `a7dc8322f1d2b1eb9` | orchestrator | P1 stack orchestrator | runs 1-5 | sonnet | 66 | $6.97 | 122k/151k | 33k | 0 | 19 |
+| `afbf80cc903eb7766` | driver | CR 041 driver (Opus) | pre-run-1 batches | opus | 84 | $4.89 | 96k/132k | 34k | 0 | 6 |
+| `a21e1ec0a8fc37d31` | orchestrator | Orchestrator run 3: archive + CRs 132-13 | runs 1-5 | opus | 46 | $4.77 | 95k/137k | 34k | 0 | 5 |
+| `a725410a2169211f8` | orchestrator | Orchestrator restart: CR 135 + 137-147 | runs 1-5 | opus | 24 | $2.98 | 79k/121k | 34k | 0 | 3 |
+| `ac8cb022104af086d` | driver | CR 025 driver | pre-run-1 batches | sonnet | 48 | $2.65 | 67k/83k | 35k | 0 | 13 |
+| `af1be46b47fd4a981` | orchestrator | Orchestrator F: okfreq inventories | other workstreams | sonnet | 39 | $2.42 | 112k/173k | 32k | 0 | 2 |
+| `ab5a555448b9c2050` | stack driver | Stack driver restack and requirements | runs 1-5 | sonnet | 96 | $2.22 | 89k/120k | 35k | 0 | 0 |
+
+## D. First prompt (brief) size, chars: median per role
+orchestrator median brief 3483 chars ≈ 1451 tok; first-turn ctx median 33.3k
+driver median brief 2320 chars ≈ 967 tok; first-turn ctx median 34.2k
+stack driver median brief 2871 chars ≈ 1196 tok; first-turn ctx median 35.1k
+task driver median brief 2720 chars ≈ 1133 tok; first-turn ctx median 35.4k

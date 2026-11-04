@@ -1,0 +1,102 @@
+
+## Scope: all orchestration agents — real $233.59 in window, $214.87/week
+
+cap sweep after L2+L3+L4ab low: [cap -k rot ttl 5m: $209.24 rot 0] [cap -k rot ttl 60m: $146.61 rot 0] [cap 60k rot ttl 5m: $163.97 rot 178] [cap 60k rot ttl 60m: $156.45 rot 178] [cap 60k com ttl 5m: $151.86 rot 144] [cap 60k com ttl 60m: $141.55 rot 144] [cap 100k rot ttl 5m: $155.04 rot 32] [cap 100k rot ttl 60m: $125.17 rot 32] [cap 100k com ttl 5m: $152.76 rot 31] [cap 100k com ttl 60m: $123.46 rot 31] [cap 150k rot ttl 5m: $165.24 rot 11] [cap 150k rot ttl 60m: $126.05 rot 11] [cap 150k com ttl 5m: $163.57 rot 11] [cap 150k com ttl 60m: $124.96 rot 11] 
+
+cap sweep after L2+L3+L4ab high: [cap -k rot ttl 5m: $133.36 rot 0] [cap -k rot ttl 60m: $85.10 rot 0] [cap 60k rot ttl 5m: $115.28 rot 70] [cap 60k rot ttl 60m: $94.39 rot 70] [cap 60k com ttl 5m: $109.56 rot 56] [cap 60k com ttl 60m: $88.23 rot 56] [cap 100k rot ttl 5m: $114.14 rot 12] [cap 100k rot ttl 60m: $81.77 rot 12] [cap 100k com ttl 5m: $113.03 rot 12] [cap 100k com ttl 60m: $81.05 rot 12] [cap 150k rot ttl 5m: $123.03 rot 3] [cap 150k rot ttl 60m: $82.37 rot 3] [cap 150k com ttl 5m: $122.41 rot 3] [cap 150k com ttl 60m: $82.10 rot 3] 
+
+### LOW path — all orchestration agents
+| Step (cumulative) | Foreman (orchestrator) | Driver (CR) | Driver: stack | Driver: task | Driver: integrator | Total | Δ vs previous | turns | rotations |
+|---|---|---|---|---|---|---|---|---|---|
+| 0 sim baseline (5-min TTL, current models) | 116.98 | 85.06 | 24.11 | 8.73 | 1.50 | 236.37 |  | 4196 | 0 |
+| +L2 waits outside LLM (polls/sleeps only) | 110.86 | 85.32 | 24.47 | 8.65 | 1.50 | 230.81 | -5.56 | 3921 | 0 |
+| +L3 crf collapses git/gh + status-write runs >=3 | 106.83 | 83.28 | 22.16 | 8.55 | 1.40 | 222.21 | -8.60 | 3740 | 0 |
+| +L4a/b hand-back cap 600 tok, status cap 800 tok | 97.54 | 79.88 | 21.97 | 8.46 | 1.39 | 209.24 | -12.97 | 3740 | 0 |
+| +L4c rotation at 150k | 64.01 | 76.34 | 15.04 | 8.46 | 1.39 | 165.24 | -44.01 | 3740 | 11 |
+| +L5 1-h TTL for these roles | 49.55 | 53.35 | 14.16 | 7.32 | 1.66 | 126.05 | -39.19 | 3740 | 11 |
+| +L6 Sonnet for all (Opus drivers/foremen -> Sonnet) | 45.22 | 47.83 | 14.29 | 7.73 | 1.77 | 116.84 | -9.21 | 3740 | 11 |
+
+### HIGH path — all orchestration agents
+| Step (cumulative) | Foreman (orchestrator) | Driver (CR) | Driver: stack | Driver: task | Driver: integrator | Total | Δ vs previous | turns | rotations |
+|---|---|---|---|---|---|---|---|---|---|
+| 0 sim baseline (5-min TTL, current models) | 116.98 | 85.06 | 24.11 | 8.73 | 1.50 | 236.37 |  | 4196 | 0 |
+| +L2 waits outside LLM (+ idle ticks, CI checks) | 110.41 | 80.60 | 23.91 | 8.62 | 1.50 | 225.03 | -11.34 | 3752 | 0 |
+| +L3 crf collapses all mechanical runs >=2 | 66.48 | 62.12 | 10.96 | 7.76 | 0.78 | 148.09 | -76.94 | 2356 | 0 |
+| +L4a/b hand-back cap 300 tok, crf status 400 tok | 56.26 | 58.20 | 10.54 | 7.60 | 0.77 | 133.36 | -14.73 | 2356 | 0 |
+| +L4c rotation at 100k | 41.34 | 55.91 | 8.52 | 7.60 | 0.77 | 114.14 | -19.23 | 2356 | 12 |
+| +L5 1-h TTL for these roles | 31.57 | 37.08 | 5.62 | 6.58 | 0.91 | 81.77 | -32.37 | 2356 | 12 |
+| +L6 Sonnet for all | 28.33 | 33.36 | 5.74 | 7.00 | 1.02 | 75.46 | -6.31 | 2356 | 12 |
+| (alt L6) Haiku for all (rotation keeps ctx < 200k) | 1.42 | 1.67 | 0.29 | 0.35 | 0.05 | 3.77 | -71.68 | 2356 | 12 |
+
+TTL alone (no other lever): 5-min $236.37 vs 1-h $170.92; per role 1h-5m: orchestrator -40.61, driver -23.26, stack driver -0.72, task driver -1.15, integrator +0.28
+Model alone, all on sonnet: $214.57 (orchestrator 111.22, driver 68.62, stack driver 24.18, task driver 8.98, integrator 1.57)
+Model alone, all on haiku: $10.73 (orchestrator 5.56, driver 3.43, stack driver 1.21, task driver 0.45, integrator 0.08)
+Model alone, all on opus: $346.49 (orchestrator 182.72, driver 113.86, stack driver 31.83, task driver 15.73, integrator 2.35)
+
+## Scope: factory scope (runs 1-5 + pre-run-1 batches) — real $160.59 in window, $147.72/week
+
+cap sweep after L2+L3+L4ab low: [cap -k rot ttl 5m: $145.62 rot 0] [cap -k rot ttl 60m: $108.50 rot 0] [cap 60k rot ttl 5m: $124.70 rot 113] [cap 60k rot ttl 60m: $118.37 rot 113] [cap 60k com ttl 5m: $117.22 rot 94] [cap 60k com ttl 60m: $109.18 rot 94] [cap 100k rot ttl 5m: $117.83 rot 15] [cap 100k rot ttl 60m: $96.43 rot 15] [cap 100k com ttl 5m: $116.38 rot 14] [cap 100k com ttl 60m: $95.59 rot 14] [cap 150k rot ttl 5m: $123.38 rot 4] [cap 150k rot ttl 60m: $97.47 rot 4] [cap 150k com ttl 5m: $122.79 rot 4] [cap 150k com ttl 60m: $96.96 rot 4] 
+
+cap sweep after L2+L3+L4ab high: [cap -k rot ttl 5m: $100.40 rot 0] [cap -k rot ttl 60m: $68.36 rot 0] [cap 60k rot ttl 5m: $89.72 rot 40] [cap 60k rot ttl 60m: $73.40 rot 40] [cap 60k com ttl 5m: $86.24 rot 31] [cap 60k com ttl 60m: $69.50 rot 31] [cap 100k rot ttl 5m: $89.05 rot 5] [cap 100k rot ttl 60m: $65.76 rot 5] [cap 100k com ttl 5m: $88.61 rot 5] [cap 100k com ttl 60m: $65.42 rot 5] [cap 150k rot ttl 5m: $94.68 rot 1] [cap 150k rot ttl 60m: $66.84 rot 1] [cap 150k com ttl 5m: $94.34 rot 1] [cap 150k com ttl 60m: $66.71 rot 1] 
+
+### LOW path — factory scope (runs 1-5 + pre-run-1 batches)
+| Step (cumulative) | Foreman (orchestrator) | Driver (CR) | Driver: stack | Driver: task | Driver: integrator | Total | Δ vs previous | turns | rotations |
+|---|---|---|---|---|---|---|---|---|---|
+| 0 sim baseline (5-min TTL, current models) | 64.12 | 64.60 | 24.11 | 8.73 | 1.50 | 163.06 |  | 3489 | 0 |
+| +L2 waits outside LLM (polls/sleeps only) | 59.42 | 65.04 | 24.47 | 8.65 | 1.50 | 159.09 | -3.98 | 3227 | 0 |
+| +L3 crf collapses git/gh + status-write runs >=3 | 57.70 | 63.33 | 22.16 | 8.55 | 1.40 | 153.14 | -5.95 | 3074 | 0 |
+| +L4a/b hand-back cap 600 tok, status cap 800 tok | 52.32 | 61.49 | 21.97 | 8.46 | 1.39 | 145.62 | -7.51 | 3074 | 0 |
+| +L4c rotation at 150k | 37.00 | 61.49 | 15.04 | 8.46 | 1.39 | 123.38 | -22.25 | 3074 | 4 |
+| +L5 1-h TTL for these roles | 26.68 | 47.65 | 14.16 | 7.32 | 1.66 | 97.47 | -25.91 | 3074 | 4 |
+| +L6 Sonnet for all (Opus drivers/foremen -> Sonnet) | 22.68 | 43.78 | 14.29 | 7.73 | 1.77 | 90.25 | -7.22 | 3074 | 4 |
+
+### HIGH path — factory scope (runs 1-5 + pre-run-1 batches)
+| Step (cumulative) | Foreman (orchestrator) | Driver (CR) | Driver: stack | Driver: task | Driver: integrator | Total | Δ vs previous | turns | rotations |
+|---|---|---|---|---|---|---|---|---|---|
+| 0 sim baseline (5-min TTL, current models) | 64.12 | 64.60 | 24.11 | 8.73 | 1.50 | 163.06 |  | 3489 | 0 |
+| +L2 waits outside LLM (+ idle ticks, CI checks) | 59.05 | 61.40 | 23.91 | 8.62 | 1.50 | 154.48 | -8.58 | 3062 | 0 |
+| +L3 crf collapses all mechanical runs >=2 | 41.90 | 48.07 | 10.96 | 7.76 | 0.78 | 109.47 | -45.02 | 2005 | 0 |
+| +L4a/b hand-back cap 300 tok, crf status 400 tok | 35.40 | 46.10 | 10.54 | 7.60 | 0.77 | 100.40 | -9.06 | 2005 | 0 |
+| +L4c rotation at 100k | 26.06 | 46.10 | 8.52 | 7.60 | 0.77 | 89.05 | -11.35 | 2005 | 5 |
+| +L5 1-h TTL for these roles | 19.40 | 33.24 | 5.62 | 6.58 | 0.91 | 65.76 | -23.30 | 2005 | 5 |
+| +L6 Sonnet for all | 16.40 | 30.89 | 5.74 | 7.00 | 1.02 | 61.05 | -4.70 | 2005 | 5 |
+| (alt L6) Haiku for all (rotation keeps ctx < 200k) | 0.82 | 1.54 | 0.29 | 0.35 | 0.05 | 3.05 | -58.00 | 2005 | 5 |
+
+TTL alone (no other lever): 5-min $163.06 vs 1-h $126.17; per role 1h-5m: orchestrator -25.92, driver -9.39, stack driver -0.72, task driver -1.15, integrator +0.28
+Model alone, all on sonnet: $150.39 (orchestrator 58.61, driver 57.04, stack driver 24.18, task driver 8.98, integrator 1.57)
+Model alone, all on haiku: $7.52 (orchestrator 2.93, driver 2.85, stack driver 1.21, task driver 0.45, integrator 0.08)
+Model alone, all on opus: $243.63 (orchestrator 100.69, driver 93.03, stack driver 31.83, task driver 15.73, integrator 2.35)
+
+## Scope: runs 1-5 only — real $65.89 in window, $60.60/week
+
+cap sweep after L2+L3+L4ab low: [cap -k rot ttl 5m: $62.93 rot 0] [cap -k rot ttl 60m: $54.14 rot 0] [cap 60k rot ttl 5m: $56.11 rot 50] [cap 60k rot ttl 60m: $55.76 rot 50] [cap 60k com ttl 5m: $53.05 rot 42] [cap 60k com ttl 60m: $51.84 rot 42] [cap 100k rot ttl 5m: $53.36 rot 8] [cap 100k rot ttl 60m: $47.92 rot 8] [cap 100k com ttl 5m: $52.72 rot 7] [cap 100k com ttl 60m: $47.34 rot 7] [cap 150k rot ttl 5m: $56.00 rot 2] [cap 150k rot ttl 60m: $48.57 rot 2] [cap 150k com ttl 5m: $55.97 rot 2] [cap 150k com ttl 60m: $48.33 rot 2] 
+
+cap sweep after L2+L3+L4ab high: [cap -k rot ttl 5m: $41.63 rot 0] [cap -k rot ttl 60m: $32.35 rot 0] [cap 60k rot ttl 5m: $38.65 rot 14] [cap 60k rot ttl 60m: $33.53 rot 14] [cap 60k com ttl 5m: $37.36 rot 11] [cap 60k com ttl 60m: $32.09 rot 11] [cap 100k rot ttl 5m: $38.58 rot 2] [cap 100k rot ttl 60m: $31.60 rot 2] [cap 100k com ttl 5m: $38.19 rot 2] [cap 100k com ttl 60m: $31.42 rot 2] [cap 150k rot ttl 5m: $41.63 rot 0] [cap 150k rot ttl 60m: $32.35 rot 0] [cap 150k com ttl 5m: $41.63 rot 0] [cap 150k com ttl 60m: $32.35 rot 0] 
+
+### LOW path — runs 1-5 only
+| Step (cumulative) | Foreman (orchestrator) | Driver (CR) | Driver: stack | Driver: task | Driver: integrator | Total | Δ vs previous | turns | rotations |
+|---|---|---|---|---|---|---|---|---|---|
+| 0 sim baseline (5-min TTL, current models) | 15.86 | 18.22 | 22.46 | 8.73 | 1.50 | 66.77 |  | 1611 | 0 |
+| +L2 waits outside LLM (polls/sleeps only) | 15.78 | 18.60 | 23.09 | 8.65 | 1.50 | 67.62 | +0.85 | 1571 | 0 |
+| +L3 crf collapses git/gh + status-write runs >=3 | 15.46 | 18.39 | 20.86 | 8.55 | 1.40 | 64.66 | -2.96 | 1507 | 0 |
+| +L4a/b hand-back cap 600 tok, status cap 800 tok | 14.28 | 18.08 | 20.73 | 8.46 | 1.39 | 62.93 | -1.73 | 1507 | 0 |
+| +L4c rotation at 150k | 14.28 | 18.08 | 13.80 | 8.46 | 1.39 | 56.00 | -6.93 | 1507 | 2 |
+| +L5 1-h TTL for these roles | 9.72 | 16.91 | 12.96 | 7.32 | 1.66 | 48.57 | -7.43 | 1507 | 2 |
+| +L6 Sonnet for all (Opus drivers/foremen -> Sonnet) | 7.60 | 17.74 | 13.06 | 7.73 | 1.77 | 47.91 | -0.66 | 1507 | 2 |
+
+### HIGH path — runs 1-5 only
+| Step (cumulative) | Foreman (orchestrator) | Driver (CR) | Driver: stack | Driver: task | Driver: integrator | Total | Δ vs previous | turns | rotations |
+|---|---|---|---|---|---|---|---|---|---|
+| 0 sim baseline (5-min TTL, current models) | 15.86 | 18.22 | 22.46 | 8.73 | 1.50 | 66.77 |  | 1611 | 0 |
+| +L2 waits outside LLM (+ idle ticks, CI checks) | 15.78 | 18.57 | 22.45 | 8.62 | 1.50 | 66.92 | +0.15 | 1559 | 0 |
+| +L3 crf collapses all mechanical runs >=2 | 11.19 | 13.49 | 9.63 | 7.76 | 0.78 | 42.85 | -24.07 | 952 | 0 |
+| +L4a/b hand-back cap 300 tok, crf status 400 tok | 10.75 | 13.16 | 9.35 | 7.60 | 0.77 | 41.63 | -1.22 | 952 | 0 |
+| +L4c rotation at 100k | 9.72 | 13.16 | 7.33 | 7.60 | 0.77 | 38.58 | -3.04 | 952 | 2 |
+| +L5 1-h TTL for these roles | 7.16 | 12.19 | 4.76 | 6.58 | 0.91 | 31.60 | -6.98 | 952 | 2 |
+| +L6 Sonnet for all | 5.57 | 13.14 | 4.86 | 7.00 | 1.02 | 31.59 | -0.01 | 952 | 2 |
+| (alt L6) Haiku for all (rotation keeps ctx < 200k) | 0.28 | 0.66 | 0.24 | 0.35 | 0.05 | 1.58 | -30.01 | 952 | 2 |
+
+TTL alone (no other lever): 5-min $66.77 vs 1-h $59.52; per role 1h-5m: orchestrator -5.17, driver -0.71, stack driver -0.50, task driver -1.15, integrator +0.28
+Model alone, all on sonnet: $64.07 (orchestrator 12.50, driver 18.50, stack driver 22.52, task driver 8.98, integrator 1.57)
+Model alone, all on haiku: $3.20 (orchestrator 0.62, driver 0.93, stack driver 1.13, task driver 0.45, integrator 0.08)
+Model alone, all on opus: $102.71 (orchestrator 22.77, driver 32.34, stack driver 29.53, task driver 15.73, integrator 2.35)

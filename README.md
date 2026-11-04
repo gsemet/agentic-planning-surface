@@ -1,2 +1,2 @@
 # agentic-planning-surface
-The planning surface for your agentic project
+A project dedicated to only planning for my opensource agentic projects

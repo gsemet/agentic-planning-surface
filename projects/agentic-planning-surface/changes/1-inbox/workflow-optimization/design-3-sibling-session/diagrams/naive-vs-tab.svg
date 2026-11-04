@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#D4956B"/>
+    </marker>
+  </defs>
+  <style>
+    text { font-family: "Inter", system-ui, -apple-system, sans-serif; }
+    .title { font-size: 20px; font-weight: 700; fill: #1E1E1E; }
+    .subtitle { font-size: 14px; fill: #948782; }
+    .panel { font-size: 14px; font-weight: 700; fill: #203c25; letter-spacing: 1px; }
+    .lbl { font-size: 14px; font-weight: 600; }
+    .note { font-size: 14px; fill: #7A6B65; }
+    .fact { font-size: 14px; fill: #1E1E1E; }
+    .dark { fill: #1E1E1E; }
+    .msg { stroke: #D4956B; stroke-width: 2.2; fill: none; }
+    .axis { stroke: #E0D4CF; stroke-width: 1; }
+  </style>
+  <rect width="960" height="600" fill="#ffffff"/>
+  <text x="480" y="32" text-anchor="middle" class="title">The naive tree against a Foreman in its own session</text>
+  <text x="480" y="56" text-anchor="middle" class="subtitle">An agent reads a message only between two tool calls.</text>
+
+  <!-- NAIVE -->
+  <text x="40" y="98" class="panel">NAIVE TREE · THE FOREMAN IS A SUBAGENT</text>
+  <line x1="40" y1="150" x2="830" y2="150" class="axis"/>
+  <rect x="40" y="128" width="40" height="44" rx="5" fill="#203c25"/>
+  <rect x="84" y="128" width="700" height="44" rx="5" fill="#D4C4BA"/>
+  <text x="434" y="155" text-anchor="middle" class="lbl dark">waits on its Drivers: no message read, cache expires</text>
+  <rect x="788" y="128" width="40" height="44" rx="5" fill="#203c25"/>
+  <path d="M200,106 L200,124" class="msg" marker-end="url(#arrow)"/>
+  <path d="M420,106 L420,124" class="msg" marker-end="url(#arrow)"/>
+  <path d="M640,106 L640,124" class="msg" marker-end="url(#arrow)"/>
+  <text x="836" y="155" class="note">read here</text>
+  <text x="40" y="202" class="fact">Messages: median 8.5 min, p90 2.5 h, 14 of 89 never arrived.</text>
+  <text x="40" y="226" class="fact">5-minute cache: most wakes rebuild the Foreman's context.</text>
+
+  <!-- TAB -->
+  <text x="40" y="288" class="panel">DESIGN 3 · THE FOREMAN IS A MAIN CONVERSATION</text>
+  <line x1="40" y1="340" x2="920" y2="340" class="axis"/>
+  <rect x="40" y="318" width="40" height="44" rx="5" fill="#203c25"/>
+  <rect x="140" y="318" width="24" height="44" rx="5" fill="#203c25"/>
+  <rect x="168" y="318" width="200" height="44" rx="5" fill="#3DBDD6"/>
+  <text x="268" y="345" text-anchor="middle" class="lbl dark">idle</text>
+  <rect x="372" y="318" width="24" height="44" rx="5" fill="#203c25"/>
+  <rect x="400" y="318" width="200" height="44" rx="5" fill="#3DBDD6"/>
+  <text x="500" y="345" text-anchor="middle" class="lbl dark">idle</text>
+  <rect x="604" y="318" width="24" height="44" rx="5" fill="#203c25"/>
+  <rect x="632" y="318" width="200" height="44" rx="5" fill="#3DBDD6"/>
+  <text x="732" y="345" text-anchor="middle" class="lbl dark">idle, cache warm</text>
+  <rect x="836" y="318" width="24" height="44" rx="5" fill="#203c25"/>
+  <path d="M152,296 L152,314" class="msg" marker-end="url(#arrow)"/>
+  <path d="M384,296 L384,314" class="msg" marker-end="url(#arrow)"/>
+  <path d="M616,296 L616,314" class="msg" marker-end="url(#arrow)"/>
+  <path d="M848,296 L848,314" class="msg" marker-end="url(#arrow)"/>
+  <text x="40" y="392" class="fact">Each message starts a short turn: answered in 3 s, 32 of 32 arrived.</text>
+  <text x="40" y="416" class="fact">1-hour cache: a wake within the hour reads instead of rebuilding.</text>
+
+  <!-- SAME -->
+  <text x="40" y="478" class="panel">BOTH · A DRIVER DURING A CODER ROUND</text>
+  <line x1="40" y1="530" x2="550" y2="530" class="axis"/>
+  <rect x="40" y="508" width="40" height="44" rx="5" fill="#46a758"/>
+  <rect x="84" y="508" width="420" height="44" rx="5" fill="#D4C4BA"/>
+  <text x="294" y="535" text-anchor="middle" class="lbl dark">Coder round: one open call</text>
+  <rect x="508" y="508" width="40" height="44" rx="5" fill="#46a758"/>
+  <path d="M200,486 L200,504" class="msg" marker-end="url(#arrow)"/>
+  <text x="568" y="526" class="note">The message waits for the round:</text>
+  <text x="568" y="546" class="note">2 min 56 s measured. Urgent: TaskStop.</text>
+</svg>

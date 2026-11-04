@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520">
+  <defs>
+    <pattern id="hatch" x="0" y="0" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="8" stroke="#ffffff" stroke-width="2"/>
+    </pattern>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#203c25"/>
+    </marker>
+  </defs>
+  <style>
+    text { font-family: "Inter", system-ui, -apple-system, sans-serif; }
+    .title { font-size: 18px; font-weight: 700; fill: #1E1E1E; }
+    .subtitle { font-size: 12px; fill: #948782; }
+    .panel { font-size: 11px; font-weight: 700; fill: #203c25; letter-spacing: 1.5px; }
+    .lbl { font-size: 12px; font-weight: 600; }
+    .sub { font-size: 9.5px; }
+    .dark { fill: #1E1E1E; }
+    .light { fill: #ffffff; }
+    .note { font-size: 11px; fill: #7A6B65; }
+    .edge { stroke: #203c25; stroke-width: 1.4; fill: none; }
+  </style>
+
+  <rect width="960" height="520" fill="#ffffff"/>
+  <text x="480" y="30" text-anchor="middle" class="title">From an LLM tree to a Chief of Staff and a workflow</text>
+  <text x="480" y="50" text-anchor="middle" class="subtitle">Left: the factory as run on 2026-10-26/27. Right: the exploratory sketch.</text>
+
+  <!-- LEFT PANEL : TODAY -->
+  <rect x="20" y="70" width="450" height="430" rx="8" fill="#ffffff" stroke="#203c25" stroke-width="1.5"/>
+  <text x="40" y="96" class="panel">TODAY</text>
+
+  <rect x="95" y="112" width="300" height="50" rx="7" fill="#D4956B"/>
+  <text x="245" y="133" text-anchor="middle" class="lbl dark">Main session · LLM</text>
+  <text x="245" y="150" text-anchor="middle" class="sub dark">talks with you and orchestrates: 43 % of its cost</text>
+
+  <rect x="95" y="192" width="300" height="50" rx="7" fill="#D4C4BA"/>
+  <rect x="95" y="192" width="300" height="50" rx="7" fill="url(#hatch)"/>
+  <text x="245" y="213" text-anchor="middle" class="lbl dark">Orchestrator · LLM</text>
+  <text x="245" y="230" text-anchor="middle" class="sub dark">night run: 263k average context over 285 turns</text>
+
+  <rect x="111" y="264" width="300" height="50" rx="7" fill="#E0D4CF"/>
+  <rect x="103" y="268" width="300" height="50" rx="7" fill="#D4C4BA" opacity="0.6"/>
+  <rect x="95" y="272" width="300" height="50" rx="7" fill="#D4C4BA"/>
+  <rect x="95" y="272" width="300" height="50" rx="7" fill="url(#hatch)"/>
+  <text x="245" y="293" text-anchor="middle" class="lbl dark">CR driver · LLM, one per CR</text>
+  <text x="245" y="310" text-anchor="middle" class="sub dark">commits, opens the PR, waits for CI inside the LLM</text>
+
+  <rect x="95" y="356" width="140" height="48" rx="7" fill="#2a7e3b"/>
+  <text x="165" y="376" text-anchor="middle" class="lbl light">Coder · LLM</text>
+  <text x="165" y="392" text-anchor="middle" class="sub light">one per round</text>
+  <rect x="255" y="356" width="140" height="48" rx="7" fill="#C4B5E0"/>
+  <text x="325" y="376" text-anchor="middle" class="lbl dark">Reviewer · LLM</text>
+  <text x="325" y="392" text-anchor="middle" class="sub dark">one per round</text>
+
+  <path d="M245,162 L245,190" class="edge" marker-end="url(#arrow)"/>
+  <path d="M245,242 L245,270" class="edge" marker-end="url(#arrow)"/>
+  <path d="M215,322 C200,336 175,340 168,354" class="edge" marker-end="url(#arrow)"/>
+  <path d="M275,322 C290,336 315,340 322,354" class="edge" marker-end="url(#arrow)"/>
+
+  <circle cx="44" cy="440" r="5" fill="#D4C4BA"/>
+  <text x="56" y="444" class="note">Hatched: LLM roles that the sketch replaces with code.</text>
+  <text x="44" y="468" class="note">Orchestration roles: $231 in 7.6 days, 40 % of it cache rebuilds.</text>
+  <text x="44" y="486" class="note">16 of 89 messages to busy orchestrators never arrived.</text>
+
+  <!-- RIGHT PANEL : SKETCH -->
+  <rect x="490" y="70" width="450" height="430" rx="8" fill="#ffffff" stroke="#203c25" stroke-width="1.5"/>
+  <text x="510" y="96" class="panel">SKETCH</text>
+
+  <rect x="565" y="112" width="300" height="50" rx="7" fill="#D4956B"/>
+  <text x="715" y="133" text-anchor="middle" class="lbl dark">Main session · Chief of Staff</text>
+  <text x="715" y="150" text-anchor="middle" class="sub dark">talks with you; steers through crf; never orchestrates</text>
+
+  <rect x="520" y="192" width="230" height="52" rx="7" fill="#46a758"/>
+  <text x="635" y="213" text-anchor="middle" class="lbl light" font-weight="700">crf-build · workflow</text>
+  <text x="635" y="230" text-anchor="middle" class="sub light">a thin loop: asks crf step what comes next</text>
+
+  <rect x="762" y="192" width="158" height="52" rx="7" fill="#7A6B65"/>
+  <text x="841" y="213" text-anchor="middle" class="lbl light">crf-land · workflow</text>
+  <text x="841" y="230" text-anchor="middle" class="sub light">after your merges</text>
+
+  <rect x="520" y="282" width="72" height="46" rx="7" fill="#2a7e3b"/>
+  <text x="556" y="301" text-anchor="middle" class="lbl light">Coder</text>
+  <text x="556" y="317" text-anchor="middle" class="sub light">per round</text>
+  <rect x="598" y="282" width="72" height="46" rx="7" fill="#C4B5E0"/>
+  <text x="634" y="301" text-anchor="middle" class="lbl dark">Reviewer</text>
+  <text x="634" y="317" text-anchor="middle" class="sub dark">schema</text>
+  <rect x="676" y="282" width="62" height="46" rx="7" fill="#E0D4CF"/>
+  <text x="707" y="301" text-anchor="middle" class="lbl dark">Judge</text>
+  <text x="707" y="317" text-anchor="middle" class="sub dark">per event</text>
+
+  <rect x="790" y="282" width="130" height="46" rx="7" fill="#ffffff" stroke="#2a7e3b" stroke-width="1.4" stroke-dasharray="5,3"/>
+  <text x="855" y="301" text-anchor="middle" class="lbl dark">Interactive coder</text>
+  <text x="855" y="317" text-anchor="middle" class="sub dark">opt-in, you message it</text>
+
+  <rect x="520" y="370" width="400" height="56" rx="7" fill="#3DBDD6"/>
+  <text x="720" y="390" text-anchor="middle" class="lbl dark">crf CLI · state machine, no LLM</text>
+  <text x="720" y="406" text-anchor="middle" class="sub dark">step · gate · ship · ci wait · stack · land</text>
+  <text x="720" y="419" text-anchor="middle" class="sub dark">steering: add · note · hold · grant · order · pause</text>
+
+  <path d="M670,162 C660,175 645,180 640,190" class="edge" marker-end="url(#arrow)"/>
+  <path d="M760,162 C775,175 830,180 836,190" class="edge" marker-end="url(#arrow)"/>
+  <path d="M560,244 L556,280" class="edge" marker-end="url(#arrow)"/>
+  <path d="M630,244 L633,280" class="edge" marker-end="url(#arrow)"/>
+  <path d="M700,244 L706,280" class="edge" marker-end="url(#arrow)"/>
+  <path d="M745,244 L745,368" class="edge" marker-end="url(#arrow)"/>
+  <path d="M776,244 L776,368" class="edge" marker-end="url(#arrow)"/>
+  <path d="M865,140 C928,150 930,250 900,280" class="edge" stroke-dasharray="5,3" marker-end="url(#arrow)"/>
+  <path d="M565,140 C500,150 500,380 518,392" class="edge" stroke-dasharray="5,3" marker-end="url(#arrow)"/>
+
+  <text x="514" y="452" class="note">LLMs only for judgment: Chief of Staff, coder, reviewer, judge.</text>
+  <text x="514" y="470" class="note">Dashed: you steer through crf state, read at every step.</text>
+  <text x="514" y="488" class="note">The main session wakes only when a CR needs your decision.</text>
+</svg>

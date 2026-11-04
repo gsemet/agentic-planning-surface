@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 470">
+  <style>
+    text { font-family: "Inter", system-ui, -apple-system, sans-serif; }
+    .title { font-size: 20px; font-weight: 700; fill: #1E1E1E; }
+    .subtitle { font-size: 14px; fill: #948782; }
+    .panel { font-size: 14px; font-weight: 700; fill: #203c25; letter-spacing: 1px; }
+    .lbl { font-size: 14px; font-weight: 600; fill: #1E1E1E; }
+    .val { font-size: 14px; font-weight: 700; fill: #1E1E1E; }
+    .note { font-size: 14px; fill: #7A6B65; }
+    .axis { stroke: #E0D4CF; stroke-width: 1; }
+  </style>
+  <rect width="960" height="470" fill="#ffffff"/>
+  <text x="480" y="32" text-anchor="middle" class="title">A subagent's cache lasts five minutes</text>
+  <text x="480" y="56" text-anchor="middle" class="subtitle">Left: measured on 2026-10-28. Right: what it means for a Driver waiting for CI.</text>
+
+  <!-- LEFT -->
+  <text x="40" y="100" class="panel">MEASURED · ONE DRIVER</text>
+  <text x="40" y="140" class="lbl">woken after 4 min 30 s</text>
+  <rect x="40" y="150" width="325" height="30" rx="4" fill="#3DBDD6"/>
+  <rect x="365" y="150" width="5" height="30" rx="1" fill="#D4956B"/>
+  <text x="50" y="171" class="val">read 33,352</text>
+  <text x="378" y="171" class="note">wrote 453</text>
+  <text x="40" y="222" class="lbl">woken after 5 min 44 s</text>
+  <rect x="40" y="232" width="114" height="30" rx="4" fill="#3DBDD6"/>
+  <rect x="154" y="232" width="205" height="30" rx="4" fill="#D4956B"/>
+  <text x="50" y="253" class="val">read 11,668</text>
+  <text x="164" y="253" class="val">wrote 21,002</text>
+  <text x="368" y="253" class="note">rebuilt</text>
+  <rect x="40" y="300" width="14" height="14" rx="2" fill="#3DBDD6"/>
+  <text x="62" y="312" class="note">cache read, 0.1× input</text>
+  <rect x="240" y="300" width="14" height="14" rx="2" fill="#D4956B"/>
+  <text x="262" y="312" class="note">cache write, 1.25×</text>
+  <text x="40" y="350" class="note">Foreman tab: 1-hour writes only.</text>
+  <text x="40" y="372" class="note">Drivers: 5-minute writes only.</text>
+
+  <line x1="470" y1="84" x2="470" y2="390" class="axis"/>
+
+  <!-- RIGHT -->
+  <text x="500" y="100" class="panel">ONE 30-MINUTE CI WAIT</text>
+  <text x="500" y="140" class="lbl">re-armed every 4.5 min</text>
+  <rect x="500" y="150" width="268" height="30" rx="4" fill="#D4C4BA"/>
+  <text x="778" y="171" class="val">$0.25</text>
+  <text x="500" y="200" class="note">7 Driver turns + 7 Foreman notices</text>
+
+  <text x="500" y="240" class="lbl">cold wake</text>
+  <rect x="500" y="250" width="300" height="30" rx="4" fill="#D4C4BA"/>
+  <text x="810" y="271" class="val">$0.28</text>
+  <text x="500" y="300" class="note">1 rebuild of 100k tokens + 1 notice</text>
+
+  <text x="500" y="340" class="lbl">1-hour Driver cache</text>
+  <rect x="500" y="350" width="43" height="30" rx="4" fill="#46a758"/>
+  <text x="553" y="371" class="val">$0.04</text>
+  <text x="500" y="400" class="note">1 warm wake + 1 notice</text>
+
+  <text x="480" y="446" text-anchor="middle" class="note">Sonnet Driver and Opus Foreman at 100k tokens. Every re-arm also wakes the Foreman.</text>
+</svg>

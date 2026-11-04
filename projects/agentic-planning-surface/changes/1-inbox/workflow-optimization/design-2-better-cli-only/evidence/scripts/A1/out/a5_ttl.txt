@@ -1,0 +1,28 @@
+## Gaps between kept turns after levers 2-4 (high), share of turns
+| Role | kept turns | <5 min | 5-15 min | 15-60 min | >1 h | median gap of >5 min gaps (min) |
+|---|---|---|---|---|---|---|
+| Foreman (orchestrator) | 664 | 83% | 8% | 7% | 2.3% | 17 |
+| Driver (CR) | 1066 | 83% | 9% | 7% | 0.7% | 13 |
+| Driver: stack | 230 | 86% | 9% | 4% | 0.9% | 11 |
+| Driver: task | 206 | 85% | 12% | 2% | 0.5% | 9 |
+| Driver: integrator | 29 | 97% | 3% | 0% | 0.0% | 9 |
+
+## Cost per role after levers 2-4 (+ rotation), by cache policy ($ window)
+
+### low levers, rotation at 150k
+| Role | 5-min | 5-min + keep-warm ticks (every 4.5 min) | 1-h | 1-h + keep-warm ticks (every 59.5 min) | best |
+|---|---|---|---|---|---|
+| Foreman (orchestrator) | 64.01 | 55.34 | 49.55 | 45.16 | 1-h+ticks |
+| Driver (CR) | 76.34 | 54.02 | 53.35 | 51.97 | 1-h+ticks |
+| Driver: stack | 15.04 | 13.75 | 14.16 | 13.72 | 1-h+ticks |
+| Driver: task | 8.46 | 6.89 | 7.32 | 7.18 | 5-min+ticks |
+| Driver: integrator | 1.39 | 1.39 | 1.66 | 1.66 | 5-min |
+
+### high levers, rotation at 100k
+| Role | 5-min | 5-min + keep-warm ticks (every 4.5 min) | 1-h | 1-h + keep-warm ticks (every 59.5 min) | best |
+|---|---|---|---|---|---|
+| Foreman (orchestrator) | 41.34 | 37.23 | 31.57 | 28.18 | 1-h+ticks |
+| Driver (CR) | 55.91 | 39.10 | 37.08 | 35.76 | 1-h+ticks |
+| Driver: stack | 8.52 | 6.59 | 5.62 | 5.12 | 1-h+ticks |
+| Driver: task | 7.60 | 6.19 | 6.58 | 6.45 | 5-min+ticks |
+| Driver: integrator | 0.77 | 0.72 | 0.91 | 0.91 | 5-min+ticks |

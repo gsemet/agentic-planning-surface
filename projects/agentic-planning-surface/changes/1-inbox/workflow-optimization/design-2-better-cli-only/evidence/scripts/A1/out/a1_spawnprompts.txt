@@ -1,0 +1,8 @@
+main: Agent prompts n=164 median 939 tok, p90 1642, total 174k tok
+task driver: Agent prompts n=76 median 632 tok, p90 962, total 50k tok
+driver: Agent prompts n=231 median 650 tok, p90 1358, total 180k tok
+orchestrator: Agent prompts n=494 median 343 tok, p90 1071, total 248k tok
+stack driver: Agent prompts n=30 median 410 tok, p90 970, total 15k tok
+main: SendMessage n=210 median 381 tok, total 91k tok
+orchestrator: SendMessage n=91 median 423 tok, total 39k tok
+driver: SendMessage n=4 median 342 tok, total 1k tok

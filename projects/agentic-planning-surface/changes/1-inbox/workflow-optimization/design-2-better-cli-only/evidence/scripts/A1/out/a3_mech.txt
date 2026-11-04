@@ -1,0 +1,29 @@
+
+## L3 low: turns replaced by crf calls
+| Role | crf calls | Turns dropped | Turns per call (incl. the call) | Real $ of dropped turns | by command (calls/dropped) |
+|---|---|---|---|---|---|
+| Foreman (orchestrator) | 19 | 49 | 3.6 | 2.78 | crf set / render 10/25; crf ship (commit/push/PR) 6/15; crf open/land (worktree) 2/4; crf ci / pr status 1/5 |
+| Driver (CR) | 32 | 79 | 3.5 | 1.67 | crf ship (commit/push/PR) 15/35; crf ci / pr status 10/30; crf set / render 7/14 |
+| Driver: stack | 14 | 40 | 3.9 | 1.09 | crf ship (commit/push/PR) 5/13; crf ci / pr status 4/15; crf set / render 3/8; crf stack 2/4 |
+| Driver: task | 3 | 6 | 3.0 | 0.10 | crf ship (commit/push/PR) 3/6 |
+| Driver: integrator | 2 | 7 | 4.5 | 0.10 | crf ship (commit/push/PR) 2/7 |
+
+## L3 high: turns replaced by crf calls
+| Role | crf calls | Turns dropped | Turns per call (incl. the call) | Real $ of dropped turns | by command (calls/dropped) |
+|---|---|---|---|---|---|
+| Foreman (orchestrator) | 107 | 464 | 5.3 | 30.50 | crf set / render 36/118; crf ship (commit/push/PR) 27/191; crf status (files) 19/42; crf gate 10/43; crf open/land (worktree) 6/36; crf status (git) 6/19; crf stack 2/9; crf ci / pr status 1/6 |
+| Driver (CR) | 194 | 512 | 3.6 | 12.27 | crf set / render 52/124; crf ship (commit/push/PR) 48/137; crf status (files) 45/92; crf ci / pr status 18/57; crf gate 14/61; crf status (git) 13/34; crf open/land (worktree) 4/7 |
+| Driver: stack | 51 | 330 | 7.5 | 11.02 | crf ship (commit/push/PR) 17/145; crf status (files) 15/54; crf gate 6/58; crf stack 5/30; crf ci / pr status 4/17; crf status (git) 2/5; crf set / render 2/21 |
+| Driver: task | 24 | 36 | 2.5 | 0.70 | crf ship (commit/push/PR) 11/18; crf status (files) 7/9; crf status (git) 3/3; crf set / render 3/6 |
+| Driver: integrator | 10 | 54 | 6.4 | 0.77 | crf gate 6/18; crf ship (commit/push/PR) 4/36 |
+
+## Per CR driver: mechanical turns and crf calls (high variant)
+runs 1-5: 46 drivers; turns/CR median 11.0, mechanical turns/CR median 5.0 (mean 5.7); crf calls/CR median 1.0 (mean 1.6); turns dropped/CR median 3.0 (mean 3.3)
+pre-run-1 batches: 47 drivers; turns/CR median 22, mechanical turns/CR median 16 (mean 19.6); crf calls/CR median 2 (mean 2.4); turns dropped/CR median 10 (mean 14.1)
+
+## Turn categories per role (real $)
+Foreman (orchestrator): mechanical: reads/other shell 358 $21.33; handback handling 85 $18.05; handback -> spawn next 62 $13.57; mechanical: git/gh 101 $10.60; steer (message from main/user) 35 $9.35; mechanical: poll/wait/CI 73 $8.50; mechanical: status/table write 141 $8.43; spawn 104 $7.44; peer message 24 $4.76; exception (error/conflict/denied/failed gate or CI) 59 $3.34; first turn (brief) 31 $2.95; other (edits src/other tools) 36 $2.17; background wait resumed 17 $1.95; send message 23 $1.93; mechanical: gates 19 $1.14; text only / report 21 $0.53
+Driver (CR): handback handling 138 $15.70; handback -> spawn next 77 $12.53; mechanical: reads/other shell 441 $12.00; mechanical: poll/wait/CI 417 $11.31; first turn (brief) 95 $6.59; mechanical: git/gh 225 $5.70; spawn 141 $4.33; mechanical: status/table write 154 $4.27; background wait resumed 61 $3.87; exception (error/conflict/denied/failed gate or CI) 137 $3.00; other (edits src/other tools) 100 $2.69; steer (message from main/user) 12 $1.69; mechanical: gates 18 $0.33; text only / report 6 $0.11; send message 4 $0.11
+Driver: stack: mechanical: reads/other shell 255 $9.26; mechanical: git/gh 95 $5.09; mechanical: poll/wait/CI 87 $2.71; exception (error/conflict/denied/failed gate or CI) 47 $1.42; mechanical: status/table write 47 $1.27; handback handling 22 $1.12; background wait resumed 18 $0.77; other (edits src/other tools) 10 $0.59; spawn 17 $0.43; mechanical: gates 9 $0.26; first turn (brief) 5 $0.22; handback -> spawn next 7 $0.14; peer message 1 $0.06
+Driver: task: handback -> spawn next 46 $2.98; first turn (brief) 25 $1.29; mechanical: reads/other shell 44 $1.22; spawn 29 $0.78; mechanical: git/gh 32 $0.59; handback handling 30 $0.54; other (edits src/other tools) 25 $0.39; exception (error/conflict/denied/failed gate or CI) 20 $0.32; mechanical: status/table write 15 $0.23; mechanical: poll/wait/CI 6 $0.10; text only / report 1 $0.01
+Driver: integrator: mechanical: git/gh 27 $0.41; mechanical: reads/other shell 25 $0.38; first turn (brief) 5 $0.27; exception (error/conflict/denied/failed gate or CI) 12 $0.17; mechanical: gates 9 $0.11; mechanical: status/table write 5 $0.08; other (edits src/other tools) 5 $0.08

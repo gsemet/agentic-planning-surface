@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 420">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#D4956B"/>
+    </marker>
+  </defs>
+  <style>
+    text { font-family: "Inter", system-ui, -apple-system, sans-serif; }
+    .title { font-size: 18px; font-weight: 700; fill: #1E1E1E; }
+    .subtitle { font-size: 12px; fill: #948782; }
+    .panel { font-size: 11px; font-weight: 700; fill: #203c25; letter-spacing: 1.5px; }
+    .lbl { font-size: 11px; font-weight: 600; }
+    .note { font-size: 11px; fill: #7A6B65; }
+    .dark { fill: #1E1E1E; }
+    .light { fill: #ffffff; }
+    .msg { stroke: #D4956B; stroke-width: 2; fill: none; }
+    .axis { stroke: #E0D4CF; stroke-width: 1; }
+  </style>
+  <rect width="960" height="420" fill="#ffffff"/>
+  <text x="480" y="30" text-anchor="middle" class="title">Why your messages to the orchestrator arrived late</text>
+  <text x="480" y="50" text-anchor="middle" class="subtitle">An agent reads a message only between tool calls. A subagent's call that spawns other agents stays open until they all return.</text>
+
+  <!-- TODAY -->
+  <text x="40" y="92" class="panel">TODAY · ORCHESTRATOR IS A SUBAGENT</text>
+  <line x1="40" y1="150" x2="920" y2="150" class="axis"/>
+  <rect x="80" y="130" width="40" height="40" rx="5" fill="#203c25"/>
+  <rect x="124" y="130" width="640" height="40" rx="5" fill="#D4C4BA"/>
+  <text x="444" y="155" text-anchor="middle" class="lbl dark">one Agent call that spawns 4 Drivers: open until the last one hands back</text>
+  <rect x="768" y="130" width="40" height="40" rx="5" fill="#203c25"/>
+  <path d="M220,104 L220,126" class="msg" marker-end="url(#arrow)"/>
+  <path d="M420,104 L420,126" class="msg" marker-end="url(#arrow)"/>
+  <path d="M620,104 L620,126" class="msg" marker-end="url(#arrow)"/>
+  <text x="228" y="112" class="note">your message, queued</text>
+  <text x="788" y="190" text-anchor="middle" class="note">read here</text>
+  <text x="40" y="214" class="note">Measured over 10 days: 783 of 783 spawns made by subagents returned only with the child's report.</text>
+  <text x="40" y="230" class="note">Main session to orchestrator, 89 messages: median 8.5 min, p90 2.5 h, 14 never delivered.</text>
+
+  <!-- DESIGN 2 -->
+  <text x="40" y="278" class="panel">DESIGN 2 · FOREMAN IS ITS OWN SESSION</text>
+  <line x1="40" y1="336" x2="920" y2="336" class="axis"/>
+  <rect x="80" y="316" width="40" height="40" rx="5" fill="#203c25"/>
+  <text x="100" y="384" text-anchor="middle" class="note">spawns</text>
+  <rect x="160" y="316" width="30" height="40" rx="5" fill="#203c25"/>
+  <rect x="194" y="316" width="190" height="40" rx="5" fill="#3DBDD6"/>
+  <text x="289" y="341" text-anchor="middle" class="lbl dark">idle · crf wait in background</text>
+  <rect x="400" y="316" width="30" height="40" rx="5" fill="#203c25"/>
+  <rect x="434" y="316" width="220" height="40" rx="5" fill="#3DBDD6"/>
+  <text x="544" y="341" text-anchor="middle" class="lbl dark">idle · crf wait in background</text>
+  <rect x="660" y="316" width="30" height="40" rx="5" fill="#203c25"/>
+  <path d="M175,290 L175,312" class="msg" marker-end="url(#arrow)"/>
+  <path d="M415,290 L415,312" class="msg" marker-end="url(#arrow)"/>
+  <path d="M675,290 L675,312" class="msg" marker-end="url(#arrow)"/>
+  <text x="700" y="300" class="note">each message starts a turn</text>
+  <text x="40" y="404" class="note">Drivers spawned from a session's main conversation run in the background and return at once.</text>
+</svg>

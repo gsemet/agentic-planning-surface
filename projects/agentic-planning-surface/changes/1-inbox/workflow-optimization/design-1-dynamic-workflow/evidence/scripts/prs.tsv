@@ -1,0 +1,106 @@
+109	change-requests/104-realinput-block-open-click	28	22	3	2026-10-26T06:27:21Z	test: keep the real-window typing scenario in step with block opening
+108	change-requests/103-requirements-test-quality	492	96	19	2026-10-26T06:27:20Z	test: cover the Mermaid and PlantUML entry points, check marker files
+107	change-requests/102-toolbar-band-fixes	280	52	21	2026-10-26T06:27:19Z	fix(vscode): keep the heading band and cursor mark on the right block
+106	change-requests/101-link-navigation-fixes	363	74	30	2026-10-26T06:27:18Z	fix(vscode): warn on broken links and keep Back/Next reliable
+105	change-requests/100-lifecycle-small-fixes	179	151	36	2026-10-26T06:27:17Z	fix(vscode): Open Preview works from Open With; drop dblclick setting
+104	change-requests/099-table-editor-polish	338	109	24	2026-10-26T06:27:16Z	feat(editor): keep table style on column edits, align pipe in code
+103	change-requests/098-html-colour-grammar	272	59	22	2026-10-26T06:27:15Z	fix(render): one colour grammar for raw tables and colour spans
+102	change-requests/097-block-editing-small-fixes	88	17	10	2026-10-26T06:27:14Z	fix(editor): AltGr arrows, include paste guard and bib cap note
+101	change-requests/096-field-editor-error-then-block-click	96	8	6	2026-10-26T06:27:13Z	fix(vscode): a refused field value no longer stays open beside a block
+100	change-requests/095-readonly-reason-wording	207	88	38	2026-10-26T06:27:12Z	fix(vscode): a read-only preview names the real cause when it refuses
+99	change-requests/094-checkbox-refusal-feedback	276	33	19	2026-10-26T06:27:11Z	fix(render): a refused checkbox toggle shows why next to the box
+98	change-requests/093-preference-write-failure	84	23	7	2026-10-26T06:27:10Z	fix(vscode): warn when a theme or view choice cannot be saved
+97	change-requests/092-comments-button-hides-threads	69	23	14	2026-10-26T06:27:09Z	fix(render): the Comments button also hides inline thread chips
+96	change-requests/091-empty-yaml-schema	52	4	7	2026-10-26T06:27:08Z	fix(frontmatter): empty YAML schema is reported instead of breaking
+95	change-requests/089-docs-includes-restricted-mode	6	3	1	2026-10-26T06:27:07Z	docs: explain which includes work in Restricted Mode
+94	change-requests/087-doc-download-empty-link	36	7	5	2026-10-26T06:27:06Z	fix(render): show the target for doc and download roles without label
+93	change-requests/088-branch-prefix	5	5	1	2026-10-25T22:43:29Z	docs: name change request branches change-requests/
+92	changes-requests/086-dollarmath-align-sphinx	70	7	7	2026-10-26T06:27:05Z	fix(render): keep dollar amounts as text like Sphinx does
+91	chore/change-requests-lifecycle	42	1981	10	2026-10-25T21:57:46Z	chore: organise change requests from inbox to trash
+89	changes-requests/084-table-row-reorder-handle	1393	3	28	2026-10-26T06:27:04Z	feat(editor): reorder table rows with a handle in edit mode
+88	changes-requests/085-flaky-reload-only-suite	26	13	4	2026-10-26T06:27:03Z	fix(editor): host messages reach the preview page in VS Code
+87	changes-requests/083-page-security-hardening	222	54	10	2026-10-25T20:38:28Z	fix(security): the preview page keeps only supported HTML and senders
+86	changes-requests/082-trust-grant-refresh	96	17	6	2026-10-25T20:38:27Z	fix(vscode): trusting a workspace makes open previews editable at once
+85	changes-requests/081-switch-back-state-lost	19	13	6	2026-10-25T20:38:26Z	fix(preview): returning to a document restores its reading state
+84	changes-requests/080-refused-open-empty-frame	137	33	20	2026-10-25T20:38:24Z	fix(editor): a refused block open shows why and can be left
+83	changes-requests/079-inline-link-opens-editor	34	19	6	2026-10-25T20:38:23Z	fix(editor): a link in a paragraph is followed, not edited
+82	changes-requests/078-block-editor-save-races	79	5	7	2026-10-25T20:38:22Z	fix(editor): open the clicked block after the save, refuse double saves
+81	changes-requests/077-stale-request-no-answer	125	34	10	2026-10-25T20:38:20Z	fix(preview): answer every request that names an older render
+80	changes-requests/076-label-rename-dead-click	129	49	19	2026-10-25T20:38:19Z	fix(preview): rename labels that start with _ . or - and answer stale ones
+79	changes-requests/075-block-edit-line-endings	154	44	10	2026-10-25T20:38:18Z	fix(editor): keep CRLF and CR line endings in block edits and inserts
+78	changes-requests/074-sticky-heading-shadow	155	2	12	2026-10-25T20:38:16Z	feat(render): soft shadow under the sticky heading band
+77	changes-requests/073-copy-button-false-copied	208	77	22	2026-10-25T20:38:15Z	fix(render): show Copied on the copy button only when text was copied
+76	changes-requests/072-copy-button-keyboard	230	23	15	2026-10-25T20:38:14Z	fix(render): reach the code-block copy button with the keyboard
+75	changes-requests/071-table-insert-splits-table	86	18	7	2026-10-25T20:38:13Z	fix(table): insert a new table after the table under the caret
+74	changes-requests/070-table-cell-paste-linebreak	47	50	7	2026-10-25T20:38:12Z	fix(table): turn a line break pasted into a cell into a space
+73	changes-requests/069-currency-dollar-preview-check	48	1	7	2026-10-25T20:38:11Z	test(preview): pin how dollar amounts render in the preview
+72	changes-requests/068-paste-partial-leftover	88	13	11	2026-10-25T20:38:10Z	fix(paste): clear leftover hidden files of an interrupted image paste
+71	changes-requests/067-paste-name-race-message	42	15	4	2026-10-25T20:38:08Z	fix(paste): save a pasted image under the next name after a name clash
+70	docs/readme-showcase	858	446	41	2026-10-25T17:03:44Z	docs: turn the README into a showcase and move details to docs/user
+69	changes-requests/066-paste-diagnostics-race	59	2	3	2026-10-25T20:38:07Z	test(vscode): keep image-paste diagnostics from hiding the real failure
+68	changes-requests/065-include-empty-argument	28	15	5	2026-10-25T20:38:06Z	fix(render): keep the preview when an include has no path yet
+67	changes-requests/064-watcher-ignore-absolute-path	37	19	6	2026-10-25T20:38:04Z	fix(vscode): refresh previews of workspaces stored under tmp or out
+65	changes-requests/063-palette-stale-after-autosave	74	28	9	2026-10-25T20:38:03Z	fix(editor): keep palette pickers working after the editor autosaves
+64	changes-requests/062-restricted-mode-capability	54	14	8	2026-10-25T20:38:02Z	fix(vscode): keep the installed extension enabled in Restricted Mode
+63	changes-requests/060-requirements-page	673	8	13	2026-10-25T16:08:20Z	feat: publish a requirements page on the project site
+62	changes-requests/059-requirements-batch3	48651	5121	1468	2026-10-25T15:59:17Z	docs: add the requirements baseline linked to code and tests
+61	dependabot/npm_and_yarn/fast-uri-3.1.9	3	3	1	2026-10-25T07:10:31Z	build(deps): bump fast-uri from 3.1.8 to 3.1.9
+60	changes-requests/059-requirements-batch2-followup	64	11	13	2026-10-24T21:53:56Z	docs: keep backlog items out of requirement text and specify the first-block palette edge
+59	changes-requests/059-requirements-batch2	18255	0	410	2026-10-24T21:23:51Z	docs: add requirements for diagrams, frontmatter and layout width
+58	docs/requirements-load-triggers	135	67	5	2026-10-24T21:24:33Z	docs: add a project constitution and say when to load the requirements rules
+57	changes-requests/061-requirements-anchored-to-code	16	1	2	2026-10-24T19:25:39Z	docs: anchor requirements to what the code does today
+56	changes-requests/059-requirements-batch1	11876	2	275	2026-10-24T19:01:31Z	docs: add requirements for rendering-core, code-blocks, gfm and myst
+55	changes-requests/059-requirements-okfreq	2317	7	20	2026-10-24T17:55:26Z	build: add an okfreq requirements bundle and checks
+54	changes-requests/060-pr-visuals	23	4	3	2026-10-24T16:22:24Z	docs: ask for small visuals in every pull request
+53	changes-requests/058-image-paste-empty-file	184	5	9	2026-10-24T16:13:37Z	fix(paste): never expose a pasted image as an empty file
+52	changes-requests/057-contributing-security-overrides	21	5	2	2026-10-24T16:04:39Z	docs: explain each dependency override and when to drop it
+51	changes-requests/056-refactor-host-neutral-core	57331	44538	488	2026-10-24T15:33:39Z	refactor: split the extension into a host-neutral core
+50	changes-requests/053-dependabot-security	107	349	4	2026-10-23T20:42:50Z	build(deps): require Python 3.11 and move docs tools to Pillow 13
+49	changes-requests/055-instruction-precedence	15	0	1	2026-10-23T20:43:23Z	docs: define which agent instructions take precedence
+48	changes-requests/054-drop-backlog-index	3	4	1	2026-10-23T20:43:31Z	docs: list backlog items only in the CR tracking table
+47	changes-requests/051-perf-zero-reloads	2306	91	30	2026-10-23T20:42:39Z	perf(preview): update the preview without reloading and keep an open inline editor
+46	changes-requests/050-preview-warning-and-pasted-image	962	102	26	2026-10-23T18:29:08Z	feat(preview): show MyST configuration warnings in a banner and paste images as paragraphs
+45	fix/local-undo-macos	365	7	14	2026-10-23T18:28:51Z	test(e2e): bring each macOS test window to the front before driving it
+44	changes-requests/052-keep-screen-awake	23	2	1	2026-10-23T17:41:08Z	docs: keep the Mac awake during window tests and list the backlog in the CR table
+43	changes-requests/049-branch-naming	14	5	1	2026-10-23T16:44:26Z	docs: name change-request branches after the change request
+42	feat/initial-defaults	560	203	29	2026-10-23T16:28:44Z	feat: start new workspaces in cream with a compact toolbar and GFM
+41	feat/light-animations	1023	17	21	2026-10-23T15:17:01Z	feat(webview): add light animations to the preview
+40	fix/linked-target-watcher	326	50	8	2026-10-23T15:22:32Z	test(integration): wait until the linked target is watched before saving
+39	feat/plantuml-js-engine	2515	52	43	2026-10-23T15:43:24Z	feat(plantuml): render diagrams with the built-in JavaScript engine
+38	docs/orchestrator-table-links	28	2	1	2026-10-23T14:40:23Z	docs: link every CR and PR in the orchestration table
+37	docs/pr-audience	24	3	3	2026-10-23T14:20:57Z	docs: write pull requests for a reader outside the team
+36	test/real-window-t2-final	740	53	28	2026-10-23T14:21:34Z	ci: run real VS Code tests on demand and cover four VS Code-only features
+35	fix/ci-stability	1235	98	26	2026-10-23T13:01:06Z	fix: stop CI flakes at the root (select-all focus bug, deterministic waits, stress job)
+34	docs/stacked-prs	39	1	3	2026-10-23T09:23:43Z	docs: stack parallel pull requests and write PRs in English
+32	test/real-window-registry	1578	289	22	2026-10-23T08:39:51Z	test(e2e): real-window capture registry with run isolation
+31	feat/myst-list-table	1203	30	22	2026-10-23T08:39:49Z	feat(preview): render MyST list-table and convert between table forms
+30	feat/inline-comment-thread	1383	17	27	2026-10-23T08:39:48Z	feat(preview): add inline comment threads with reply and delete
+29	feat/myst-grid-toctree	1064	4	14	2026-10-23T08:39:46Z	feat(render): render MyST grid cards and toctree
+28	fix/floating-edit-bar	603	59	16	2026-10-23T07:17:35Z	fix(preview): keep the floating edit bar above the edited block
+27	fix/comment-chips	458	40	21	2026-10-23T08:39:43Z	fix(preview): label comment chips, add a Comments toolbar button, square comment boxes
+26	feat/prefill-link-image-panels	199	10	6	2026-10-23T08:39:45Z	feat(webview): pre-fill link panel from reference links, keep image alt/title
+25	feat/paste-rich-text-markdown	690	6	14	2026-10-23T08:39:44Z	feat(editor): convert pasted rich text to Markdown
+24	fix/code-block-caption	141	4	9	2026-10-23T08:39:42Z	fix(preview): left-align code-block and show its caption as a title bar
+23	fix/rtl-paragraphs	64	4	5	2026-10-23T08:39:41Z	fix(preview): right-align Hebrew and Arabic paragraphs
+22	test/visual-extension-states	514	26	8	2026-10-23T08:39:50Z	test: lock extension states in visual scenarios
+21	docs/orchestration-reliability	99	41	1	2026-10-22T20:38:50Z	docs: keep parallel change request orchestration responsive
+20	fix/mermaid-error-and-overflow	187	13	11	2026-10-22T20:22:38Z	fix(preview): wrap long words and show one Mermaid error with its reason
+19	fix/change-bar-and-guidelines	384	23	17	2026-10-22T18:48:26Z	fix(render): keep the change bar clear of the text
+18	docs/parallel-cr-orchestration	112	80	2	2026-10-22T18:47:54Z	docs: describe the Parallel Change Requests Orchestration workflow
+17	docs/pr-template	41	7	3	2026-10-22T15:50:43Z	docs: add a pull request template with a graded blast radius
+16	fix/flush-block-edit	1096	36	12	2026-10-23T07:19:01Z	fix(editor): save the open editor before the preview switches document
+15	ci/parallel-jobs	517	34	11	2026-10-22T18:48:08Z	ci: run the static, visual and integration checks as parallel jobs
+14	docs/agent-guidelines	164	0	3	2026-10-22T14:50:35Z	docs: add the PRD workflow and CI guidelines for agent sessions
+13	fix/ci-flaky-tests	300	35	8	2026-10-22T15:49:58Z	fix: remove the root causes of three flaky CI tests
+12	fix/caution-alert-style	32	2	4	2026-10-22T13:06:55Z	fix(render): show Caution alerts in red with a stop-sign icon
+11	dev/gsemet-features	38108	756	200	2026-10-22T09:35:45Z	feat: backlog features 007–020, slash menu and e2e campaign rework
+10	dependabot/npm_and_yarn/markdown-it-14.3.3	3	3	1	2026-10-22T13:07:48Z	build(deps): bump markdown-it from 14.3.2 to 14.3.3
+9	fix/ci-release-0.3.1	44	320	38	2026-10-15T18:33:37Z	fix: restore CI, publish 0.3.1 to Marketplace and Pages
+8	dev/gsemet	1645	62	67	2026-10-15T16:43:10Z	UI discrepancies with Windows
+7	fix/release-0.2.1	24	13	4	2026-10-15T15:35:17Z	chore: prepare 0.2.1 release
+6	dev/gsemet	819	135	44	2026-10-15T14:41:50Z	build: add navigation and rework UI of e2e screenshots gallery
+5	dev/gsemet	81	23	4	2026-10-15T10:27:45Z	fix(ci): deploy Pages only from version tags
+4	dev/gsemet	11	2	2	2026-10-15T10:25:48Z	fix(ci): require release workflows to run on tags
+3	dev/gsemet	5113	375	59		feat: publish Markdown OKF-Schema Studio
+2	dev/gsemet	62	100	5	2026-10-14T22:48:56Z	ci: update publishing to vs marketplace
+1	dev/gsemet	64642	0	249	2026-10-14T22:24:52Z	Import Markdown OKF-Schema Studio and validate public dependencies

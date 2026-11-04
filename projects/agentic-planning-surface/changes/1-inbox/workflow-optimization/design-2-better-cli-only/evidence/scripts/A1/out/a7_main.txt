@@ -1,0 +1,74 @@
+## Main session dd375646-4450-4e52-a643-89ff1d9e405a: 2391 turns, $198.78, 574 episodes
+
+| Episode trigger | Episodes | Turns | Cost | Orchestration turns | Orchestration $ |
+|---|---|---|---|---|---|
+| user: content | 209 | 994 | $74.52 | 321 | $23.80 |
+| notification: other agent | 121 | 394 | $29.42 | 253 | $20.31 |
+| notification: background shell | 54 | 313 | $25.73 | 183 | $18.00 |
+| user: merged | 48 | 241 | $23.97 | 108 | $9.08 |
+| notification from orchestrator | 50 | 184 | $14.51 | 91 | $8.18 |
+| user: status question | 48 | 141 | $8.92 | 41 | $2.16 |
+| notification from driver | 15 | 42 | $3.43 | 25 | $1.75 |
+| user: continue | 24 | 71 | $17.63 | 22 | $1.09 |
+| notification from stack driver | 5 | 11 | $0.65 | 9 | $0.53 |
+
+| Turn cause | Turns | Cost |
+|---|---|---|
+| status read / run state | 452 | $38.48 |
+| ad hoc scripts | 217 | $19.31 |
+| react to factory notification (read, no action) | 136 | $9.70 |
+| relay / steer an agent | 122 | $9.25 |
+| restart / (re)start agents | 48 | $3.60 |
+| child work: merge/rebase/land/CI rerun | 42 | $2.45 |
+| monitoring / waiting | 36 | $2.12 |
+orchestration total: 1053 turns $84.91
+
+Cause x trigger ($):
+  user: continue: relay / steer an agent 0.57, status read / run state 0.26, restart / (re)start agents 0.14, ad hoc scripts 0.12
+  notification: other agent: ad hoc scripts 8.60, react to factory notification (read, no action) 4.82, status read / run state 3.83, relay / steer an agent 2.18, monitoring / waiting 0.44, restart / (re)start agents 0.29, child work: merge/rebase/land/CI rerun 0.16
+  user: content: status read / run state 13.56, ad hoc scripts 6.07, relay / steer an agent 2.44, restart / (re)start agents 1.13, child work: merge/rebase/land/CI rerun 0.31, monitoring / waiting 0.28
+  notification: background shell: status read / run state 11.40, ad hoc scripts 2.51, react to factory notification (read, no action) 1.51, child work: merge/rebase/land/CI rerun 0.94, relay / steer an agent 0.86, monitoring / waiting 0.71, restart / (re)start agents 0.07
+  user: status question: status read / run state 1.24, relay / steer an agent 0.52, monitoring / waiting 0.21, ad hoc scripts 0.16, restart / (re)start agents 0.04
+  user: merged: status read / run state 5.44, ad hoc scripts 1.14, child work: merge/rebase/land/CI rerun 0.78, restart / (re)start agents 0.76, relay / steer an agent 0.72, monitoring / waiting 0.23
+  notification from orchestrator: react to factory notification (read, no action) 2.59, status read / run state 1.95, relay / steer an agent 1.77, restart / (re)start agents 0.95, ad hoc scripts 0.62, monitoring / waiting 0.20, child work: merge/rebase/land/CI rerun 0.10
+  notification from driver: react to factory notification (read, no action) 0.65, status read / run state 0.57, restart / (re)start agents 0.22, relay / steer an agent 0.19, ad hoc scripts 0.08, child work: merge/rebase/land/CI rerun 0.03
+  notification from stack driver: status read / run state 0.23, react to factory notification (read, no action) 0.13, child work: merge/rebase/land/CI rerun 0.12, monitoring / waiting 0.05
+
+notifications by (kind, source role): {('task_notif', 'coder/writer'): 93, ('task_notif', 'orchestrator'): 77, ('task_notif', 'reviewer'): 71, ('task_notif', 'bash'): 69, ('task_notif', 'driver'): 17, ('task_notif', 'analyst'): 16, ('handback', 'orchestrator'): 10, ('task_notif', 'stack driver'): 5, ('handback', 'reviewer'): 4, ('handback', 'coder/writer'): 3, ('handback', 'analyst'): 2, ('task_notif', 'other'): 2, ('peer_msg', 'coder/writer'): 2, ('peer_msg', 'driver'): 2, ('peer_msg', 'orchestrator'): 1, ('handback', 'driver'): 1}
+TaskStop calls: 26 | orchestration Agent spawns: 47 | SendMessage: 208
+
+## Design-2 simulation of dd375646-4450-4e52-a643-89ff1d9e405a (Opus, 1-h TTL)
+sim baseline $207.42 vs real $198.78
+low: drop 415 turns -> $164.82 (saving $42.60, 21%)
+   + autocompact at 100k: $125.87 (46 compactions; extra saving $38.95)
+   + autocompact at 150k: $127.85 (23 compactions; extra saving $36.97)
+   + autocompact at 200k: $139.22 (15 compactions; extra saving $25.60)
+high: drop 911 turns -> $123.68 (saving $83.74, 40%)
+   + autocompact at 100k: $103.57 (35 compactions; extra saving $20.11)
+   + autocompact at 150k: $106.36 (17 compactions; extra saving $17.32)
+   + autocompact at 200k: $117.23 (12 compactions; extra saving $6.46)
+final low (autocompact 150k): $127.85; with keep-warm /loop tick every 59.5 min while idle: $110.81 (-17.04)
+final high (autocompact 100k): $103.57; with keep-warm /loop tick every 59.5 min while idle: $88.23 (-15.35)
+keep-warm alone on today's session: $167.24 vs $207.42 (-40.18)
+
+Saving per cause, simulated alone (drop that cause's turns; 1 crf call kept per user status/merge episode):
+  status read / run state: $41.53
+  ad hoc scripts: $24.68
+  react to factory notification (read, no action): $12.54
+  relay / steer an agent: $12.69
+  restart / (re)start agents: $6.45
+  child work: merge/rebase/land/CI rerun: $3.01
+  monitoring / waiting: $2.77
+
+week factor 0.920
+
+## WHY the main session did orchestration (one cause per episode; orchestration turns only)
+| Cause | Episodes | Orch. turns | Orch. $ (window) | Saving if removed, simulated alone |
+|---|---|---|---|---|
+| A Foreman/agent stalled, froze, died, or a message did not land (nudge, TaskStop, restart) | 38 | 105 | $8.95 | $11.25 |
+| B User asked for status | 19 | 34 | $1.81 | $2.58 |
+| C Merge / landing follow-up | 34 | 99 | $8.31 | $8.31 |
+| D Report from a factory agent (orchestrator/driver hand-back, interim report) | 63 | 109 | $8.29 | $8.74 |
+| E Main session's own waits: CI / heavy CI / bisect run in background shells | 51 | 167 | $16.93 | $13.80 |
+| F Main session acted as orchestrator (coders/reviewers/analysts it launched itself) | 119 | 247 | $18.32 | $24.31 |
+| G User decision or new work → relay, brief, open CRs, then check state | 112 | 292 | $22.31 | $31.10 |

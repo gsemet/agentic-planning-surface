@@ -1,0 +1,29 @@
+| Role | Variant | Wait turns | Real $ of wait turns | Episodes | Polls/episode med (max) | Episode wall min med / p90 | Wakes after >5 min | Real $ of episodes incl. wake | Design-2 $ 5-min TTL | Design-2 $ 1-h TTL | Saving 5-min | Saving 1-h |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Foreman (orchestrator) | low | 78 | 8.49 | 53 | 1 (4) | 1.8 / 10.2 | 14 | 16.61 | 14.05 | 5.79 | +2.56 | +10.82 |
+| Foreman (orchestrator) | high | 85 | 9.50 | 55 | 1 (4) | 1.3 / 10.2 | 14 | 17.31 | 14.39 | 6.14 | +2.92 | +11.17 |
+| Driver (CR) | low | 378 | 8.89 | 158 | 2 (12) | 4.8 / 19.0 | 62 | 16.78 | 19.29 | 6.78 | -2.51 | +9.99 |
+| Driver (CR) | high | 501 | 14.00 | 141 | 2 (24) | 4.7 / 22.0 | 54 | 18.85 | 17.34 | 6.82 | +1.51 | +12.03 |
+| Driver: stack | low | 71 | 2.21 | 38 | 1 (9) | 4.4 / 10.1 | 9 | 3.45 | 5.02 | 2.57 | -1.56 | +0.88 |
+| Driver: stack | high | 101 | 3.15 | 45 | 1 (9) | 2.2 / 9.7 | 11 | 4.70 | 6.10 | 3.31 | -1.40 | +1.39 |
+| Driver: task | low | 7 | 0.12 | 3 | 2 (3) | 0.1 / 0.2 | 0 | 0.16 | 0.10 | 0.10 | +0.07 | +0.06 |
+| Driver: task | high | 8 | 0.13 | 2 | 4 (6) | 0.2 / 0.4 | 0 | 0.16 | 0.06 | 0.07 | +0.10 | +0.09 |
+| Main session dd375646 | low | 43 | 2.68 | 39 | 1 (2) | 0.1 / 0.4 | 1 | 4.96 | 6.20 | 4.82 | -1.23 | +0.14 |
+| Main session dd375646 | high | 99 | 5.76 | 72 | 1 (5) | 0.2 / 0.5 | 1 | 10.06 | 9.79 | 8.59 | +0.27 | +1.46 |
+TOTAL low: real episodes $41.96, design-2 5-min $44.64 (saving -2.68), 1-h $20.07 (saving +21.90); per week x0.92
+TOTAL high: real episodes $51.08, design-2 5-min $47.68 (saving +3.39), 1-h $24.93 (saving +26.14); per week x0.92
+
+Foreground blocking waits (one Bash call > 5 min) followed by a rebuild:
+  Foreman (orchestrator): 38 rebuilds after a foreground Bash > 5 min, write $23.40
+  Driver (CR): 71 rebuilds after a foreground Bash > 5 min, write $21.69
+  Driver: stack: 1 rebuilds after a foreground Bash > 5 min, write $0.15
+  Driver: task: 11 rebuilds after a foreground Bash > 5 min, write $1.15
+  Driver: integrator: 0 rebuilds after a foreground Bash > 5 min, write $0.00
+
+Rebuilds by what woke the agent (trigger of the rebuild turn), write $:
+  Foreman (orchestrator): handback 61 ($30.91), steer 24 ($8.61), result of bash:poll 10 ($6.60), result of bash:other 5 ($5.31), system 10 ($3.91), result of tool:SubagentHandback 3 ($1.70), task_notif 1 ($0.78), result of bash:read-shell 1 ($0.24)
+  Driver (CR): handback 88 ($23.89), result of bash:poll 22 ($5.53), task_notif 9 ($2.67), steer 5 ($1.43), system 3 ($1.07), result of bash:gh-ci 2 ($0.58), result of tool:SubagentHandback 2 ($0.28), result of bash:other 1 ($0.20)
+  Driver: stack: result of tool:SubagentHandback 4 ($2.42), handback 1 ($0.46), result of bash:other 1 ($0.15)
+  Driver: task: handback 17 ($1.69), result of bash:sys 2 ($0.27), result of tool:SubagentHandback 1 ($0.12), result of bash:write-shell 1 ($0.08)
+  Driver: integrator: 
+  Main session dd375646: steer 19 ($28.23), system 7 ($11.02), task_notif 4 ($6.44), compact 1 ($0.40)

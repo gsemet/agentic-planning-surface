@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 640">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#203c25"/>
+    </marker>
+    <marker id="arrow-crf" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3DBDD6"/>
+    </marker>
+  </defs>
+  <style>
+    text { font-family: "Inter", system-ui, -apple-system, sans-serif; }
+    .title { font-size: 20px; font-weight: 700; fill: #1E1E1E; }
+    .subtitle { font-size: 14px; fill: #948782; }
+    .lbl { font-size: 16px; font-weight: 700; }
+    .sub { font-size: 14px; }
+    .dark { fill: #1E1E1E; }
+    .light { fill: #ffffff; }
+    .note { font-size: 14px; fill: #7A6B65; }
+    .warn { font-size: 14px; font-weight: 700; fill: #B4532A; }
+    .depth { font-size: 14px; font-weight: 700; fill: #948782; letter-spacing: 1px; }
+    .edge { stroke: #203c25; stroke-width: 1.6; fill: none; }
+    .crf { stroke: #3DBDD6; stroke-width: 2; fill: none; stroke-dasharray: 5,4; }
+  </style>
+  <rect width="960" height="640" fill="#ffffff"/>
+  <text x="480" y="32" text-anchor="middle" class="title">Design 2: today's agent tree, with a better CLI</text>
+  <text x="480" y="56" text-anchor="middle" class="subtitle">Same agents, same places. Mechanical work and waits move into crf.</text>
+
+  <!-- main -->
+  <text x="40" y="104" class="depth">YOUR SESSION</text>
+  <rect x="230" y="80" width="460" height="64" rx="8" fill="#D4956B"/>
+  <text x="250" y="106" class="lbl dark">Main session</text>
+  <text x="250" y="130" class="sub dark">talks with you · crf status, crf note</text>
+  <rect x="590" y="92" width="88" height="24" rx="12" fill="#ffffff"/>
+  <text x="634" y="109" text-anchor="middle" class="depth" style="fill:#203c25">1 h cache</text>
+  <path d="M460,144 L460,176" class="edge" marker-end="url(#arrow)"/>
+
+  <!-- orchestrator -->
+  <text x="40" y="204" class="depth">DEPTH 1</text>
+  <rect x="230" y="180" width="460" height="64" rx="8" fill="#203c25"/>
+  <text x="250" y="206" class="lbl light">Orchestrator · subagent</text>
+  <text x="250" y="230" class="sub light">blocked while its Drivers run</text>
+  <rect x="590" y="192" width="88" height="24" rx="12" fill="#ffffff"/>
+  <text x="634" y="209" text-anchor="middle" class="depth" style="fill:#203c25">5 min</text>
+  <text x="706" y="206" class="warn">no /loop, no 1 h cache:</text>
+  <text x="706" y="228" class="note">each wake after 5 min</text>
+  <text x="706" y="248" class="note">rebuilds its context</text>
+
+  <!-- drivers -->
+  <text x="40" y="304" class="depth">DEPTH 2</text>
+  <rect x="120" y="280" width="220" height="64" rx="8" fill="#46a758"/>
+  <text x="230" y="306" text-anchor="middle" class="lbl light">Driver · one per CR</text>
+  <text x="230" y="330" text-anchor="middle" class="sub light">ship, gate, wait in crf</text>
+  <rect x="370" y="280" width="220" height="64" rx="8" fill="#46a758"/>
+  <text x="480" y="306" text-anchor="middle" class="lbl light">Stack Driver</text>
+  <text x="480" y="330" text-anchor="middle" class="sub light">crf stack, bisect</text>
+  <rect x="620" y="280" width="220" height="64" rx="8" fill="#46a758"/>
+  <text x="730" y="306" text-anchor="middle" class="lbl light">Task Driver</text>
+  <text x="730" y="330" text-anchor="middle" class="sub light">crf ship</text>
+  <path d="M380,244 C330,258 250,262 236,276" class="edge" marker-end="url(#arrow)"/>
+  <path d="M480,244 L480,276" class="edge" marker-end="url(#arrow)"/>
+  <path d="M580,244 C630,258 710,262 724,276" class="edge" marker-end="url(#arrow)"/>
+
+  <!-- workers -->
+  <text x="40" y="404" class="depth">DEPTH 3</text>
+  <rect x="120" y="380" width="170" height="64" rx="8" fill="#2a7e3b"/>
+  <text x="205" y="406" text-anchor="middle" class="lbl light">Coder</text>
+  <text x="205" y="430" text-anchor="middle" class="sub light">fast gates only</text>
+  <rect x="310" y="380" width="170" height="64" rx="8" fill="#C4B5E0"/>
+  <text x="395" y="406" text-anchor="middle" class="lbl dark">Reviewer</text>
+  <text x="395" y="430" text-anchor="middle" class="sub dark">diff and gate summary</text>
+  <path d="M205,344 L205,376" class="edge" marker-end="url(#arrow)"/>
+  <path d="M260,344 C300,358 380,362 390,376" class="edge" marker-end="url(#arrow)"/>
+  <text x="510" y="406" class="note">Depth limit reached:</text>
+  <text x="510" y="428" class="note">a Coder cannot delegate further.</text>
+
+  <!-- crf -->
+  <rect x="120" y="490" width="720" height="70" rx="8" fill="#3DBDD6"/>
+  <text x="480" y="518" text-anchor="middle" class="lbl dark">crf · a Python CLI, no LLM · 10 to 30 lines per call</text>
+  <text x="480" y="544" text-anchor="middle" class="sub dark">open · status · ship · gate --long · ci wait · wait · stack · note · land</text>
+  <path d="M228,112 L22,112 L22,525 L118,525" class="crf" marker-end="url(#arrow-crf)"/>
+  <path d="M842,312 L860,312 L860,525 L842,525" class="crf" marker-end="url(#arrow-crf)"/>
+
+  <text x="480" y="596" text-anchor="middle" class="note">Every agent calls crf for mechanics: fewer turns, shorter contexts.</text>
+  <text x="480" y="620" text-anchor="middle" class="note">What crf cannot fix: the blocked orchestrator's cache.</text>
+</svg>

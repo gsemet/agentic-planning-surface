@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "document": "01-design.md",
+  "threads": [
+    {
+      "id": "t_2af10c53",
+      "anchor": {
+        "line": 381,
+        "endLine": 381,
+        "quote": "every agent",
+        "prefix": " in the skill folder, shared by ",
+        "suffix": "."
+      },
+      "resolved": false,
+      "createdAt": "2026-10-27T22:56:14.292Z",
+      "comments": [
+        {
+          "id": "c_5d864645",
+          "author": "az02065",
+          "createdAt": "2026-10-27T22:56:14.292Z",
+          "body": "Yes"
+        }
+      ]
+    },
+    {
+      "id": "t_fafb70d4",
+      "anchor": {
+        "line": 382,
+        "endLine": 382,
+        "quote": "one per batch",
+        "prefix": "ong-lived Foreman? Recommended: ",
+        "suffix": ", named after it; a batch is the"
+      },
+      "resolved": false,
+      "createdAt": "2026-10-27T22:56:22.717Z",
+      "comments": [
+        {
+          "id": "c_c1c4d5e1",
+          "author": "az02065",
+          "createdAt": "2026-10-27T22:56:22.717Z",
+          "body": "ok"
+        }
+      ]
+    },
+    {
+      "id": "t_995e7834",
+      "anchor": {
+        "line": 384,
+        "endLine": 384,
+        "quote": "Opus",
+        "prefix": "on Opus or Sonnet? Recommended: ",
+        "suffix": ", for $3–5 a week, since it inhe"
+      },
+      "resolved": false,
+      "createdAt": "2026-10-27T22:56:33.459Z",
+      "comments": [
+        {
+          "id": "c_cfcba1cf",
+          "author": "az02065",
+          "createdAt": "2026-10-27T22:56:33.459Z",
+          "body": "ok"
+        }
+      ]
+    },
+    {
+      "id": "t_a257cd4c",
+      "anchor": {
+        "line": 386,
+        "endLine": 387,
+        "quote": "yes on long breaks during a run",
+        "prefix": "hile you are away? Recommended: ",
+        "suffix": ", off otherwise."
+      },
+      "resolved": false,
+      "createdAt": "2026-10-27T22:56:43.576Z",
+      "comments": [
+        {
+          "id": "c_f9e1eca2",
+          "author": "az02065",
+          "createdAt": "2026-10-27T22:56:43.576Z",
+          "body": "yes"
+        }
+      ]
+    }
+  ]
+}

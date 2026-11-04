@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 660">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#203c25"/>
+    </marker>
+    <marker id="arrow-msg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#D4956B"/>
+    </marker>
+  </defs>
+  <style>
+    text { font-family: "Inter", system-ui, -apple-system, sans-serif; }
+    .title { font-size: 20px; font-weight: 700; fill: #1E1E1E; }
+    .subtitle { font-size: 14px; fill: #948782; }
+    .lbl { font-size: 16px; font-weight: 700; }
+    .sub { font-size: 14px; }
+    .dark { fill: #1E1E1E; }
+    .light { fill: #ffffff; }
+    .note { font-size: 14px; fill: #7A6B65; }
+    .depth { font-size: 14px; font-weight: 700; fill: #948782; letter-spacing: 1px; }
+    .edge { stroke: #203c25; stroke-width: 1.6; fill: none; }
+    .edge-fg { stroke: #203c25; stroke-width: 1.6; fill: none; stroke-dasharray: 2,3; }
+    .msg { stroke: #D4956B; stroke-width: 2; fill: none; stroke-dasharray: 6,4; }
+    .frame { fill: none; stroke: #C9BBB4; stroke-width: 1.2; stroke-dasharray: 4,4; }
+    .pill { font-size: 14px; font-weight: 700; fill: #203c25; }
+  </style>
+  <rect width="960" height="660" fill="#ffffff"/>
+  <text x="480" y="32" text-anchor="middle" class="title">Design 3: the Foreman in a session next to yours</text>
+  <text x="480" y="56" text-anchor="middle" class="subtitle">Two main conversations with a 1-hour cache. Only the Foreman owns Drivers.</text>
+
+  <!-- sessions -->
+  <rect x="20" y="74" width="920" height="146" rx="10" class="frame"/>
+  <text x="924" y="98" text-anchor="end" class="depth">TWO SESSIONS · FOUND BY NAME</text>
+  <rect x="170" y="88" width="60" height="28" rx="14" fill="#E0D4CF"/>
+  <text x="200" y="107" text-anchor="middle" class="lbl dark">you</text>
+  <path d="M200,116 L200,128" class="edge" marker-end="url(#arrow)"/>
+
+  <rect x="40" y="130" width="360" height="74" rx="8" fill="#D4956B"/>
+  <text x="58" y="158" class="lbl dark">Chief of Staff</text>
+  <text x="58" y="186" class="sub dark">"cos-studio" · talks with you, grills</text>
+  <rect x="300" y="142" width="88" height="24" rx="12" fill="#ffffff"/>
+  <text x="344" y="159" text-anchor="middle" class="pill">1 h cache</text>
+
+  <rect x="560" y="130" width="360" height="74" rx="8" fill="#203c25"/>
+  <text x="578" y="158" class="lbl light">Foreman</text>
+  <text x="578" y="186" class="sub light">"foreman-run-8" · owns the Drivers</text>
+  <rect x="820" y="142" width="88" height="24" rx="12" fill="#ffffff"/>
+  <text x="864" y="159" text-anchor="middle" class="pill">1 h cache</text>
+
+  <path d="M403,160 L556,160" class="msg" marker-end="url(#arrow-msg)"/>
+  <path d="M557,180 L404,180" class="msg" marker-end="url(#arrow-msg)"/>
+  <text x="480" y="150" text-anchor="middle" class="note">messages · 3 s</text>
+
+  <!-- Background row -->
+  <text x="72" y="256" class="depth">BACKGROUND SUBAGENTS</text>
+  <rect x="40" y="268" width="180" height="64" rx="8" fill="#F0D5C2"/>
+  <text x="130" y="294" text-anchor="middle" class="lbl dark">Explorers</text>
+  <text x="130" y="318" text-anchor="middle" class="sub dark">for the grill</text>
+  <path d="M60,204 L60,264" class="edge" marker-end="url(#arrow)"/>
+
+  <rect x="250" y="268" width="210" height="64" rx="8" fill="#46a758"/>
+  <text x="355" y="294" text-anchor="middle" class="lbl light">Driver · CR 101</text>
+  <text x="355" y="318" text-anchor="middle" class="sub light">5 min, 1 h via driver.md</text>
+  <rect x="475" y="268" width="210" height="64" rx="8" fill="#46a758"/>
+  <text x="580" y="294" text-anchor="middle" class="lbl light">Driver · CR 102</text>
+  <text x="580" y="318" text-anchor="middle" class="sub light">5 min, 1 h via driver.md</text>
+  <rect x="700" y="268" width="210" height="64" rx="8" fill="#46a758"/>
+  <text x="805" y="294" text-anchor="middle" class="lbl light">Stack Driver</text>
+  <text x="805" y="318" text-anchor="middle" class="sub light">5 min, 1 h via driver.md</text>
+  <path d="M650,206 C600,240 380,236 362,264" class="edge" marker-end="url(#arrow)"/>
+  <path d="M720,206 L600,264" class="edge" marker-end="url(#arrow)"/>
+  <path d="M790,206 L800,264" class="edge" marker-end="url(#arrow)"/>
+
+  <!-- Foreground row -->
+  <text x="40" y="384" class="depth">FOREGROUND · ONE ROUND</text>
+  <text x="40" y="354" class="note">code, docs; never a Driver</text>
+  <rect x="250" y="390" width="170" height="64" rx="8" fill="#2a7e3b"/>
+  <text x="335" y="416" text-anchor="middle" class="lbl light">Coder</text>
+  <text x="335" y="440" text-anchor="middle" class="sub light">5 min cache</text>
+  <rect x="440" y="390" width="170" height="64" rx="8" fill="#C4B5E0"/>
+  <text x="525" y="416" text-anchor="middle" class="lbl dark">Inspector</text>
+  <text x="525" y="440" text-anchor="middle" class="sub dark">5 min cache</text>
+  <path d="M335,332 L335,386" class="edge-fg" marker-end="url(#arrow)"/>
+  <path d="M410,332 C450,352 510,366 520,386" class="edge-fg" marker-end="url(#arrow)"/>
+
+  <!-- Depth 3 -->
+  <text x="40" y="500" class="depth">DEPTH 3, FREED</text>
+  <rect x="250" y="512" width="170" height="64" rx="8" fill="#ffffff" stroke="#2a7e3b" stroke-width="1.6" stroke-dasharray="5,4"/>
+  <text x="335" y="538" text-anchor="middle" class="lbl dark">Coder's helper</text>
+  <text x="335" y="562" text-anchor="middle" class="sub dark">search, analysis</text>
+  <path d="M335,454 L335,508" class="edge-fg" marker-end="url(#arrow)"/>
+  <text x="440" y="538" class="note">Naive tree: the Coder is at depth 3, the limit.</text>
+  <text x="440" y="560" class="note">Here it can delegate again.</text>
+
+  <text x="480" y="614" text-anchor="middle" class="note">Driver reports and hand-backs go to the Foreman, never to your session.</text>
+  <text x="480" y="638" text-anchor="middle" class="note">A Driver is unreachable only while its Coder or Inspector runs.</text>
+</svg>
